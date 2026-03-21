@@ -148,7 +148,7 @@ async def start_session(ws, sct):
     pc = RTCPeerConnection()
     video_track = ScreenVideoTrack(sct)
 
-    @pc.on_datachannel
+    @pc.on("datachannel")
     def on_datachannel(dc):
         @dc.on_message
         def on_message(m):
