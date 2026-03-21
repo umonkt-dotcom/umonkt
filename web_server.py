@@ -84,15 +84,21 @@ class ConnectionManager:
                     save_registry()
                     break
 
+    async def broadcast_text_to_portals(self, data: str, client_id: str = None):
+        if not client_id: return
+        await asyncio.gather(*[
+            portal.send_text(data)
+            for portal in list(PORTALS)
+            if PORTAL_TO_CLIENT.get(portal) == client_id
+        ], return_exceptions=True)
+
     async def broadcast_to_portals(self, data: bytes, client_id: str = None):
         if not client_id: return
-        # Pro-Level: Parallel broadcasting to prevent slow clients from blocking the pipe
         await asyncio.gather(*[
             portal.send_bytes(data)
             for portal in list(PORTALS)
             if PORTAL_TO_CLIENT.get(portal) == client_id
         ], return_exceptions=True)
-
 
     async def send_to_client(self, client_id: str, data: dict):
         client_ws = CLIENTS.get(client_id)
@@ -252,16 +258,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Client can send text (signaling) or bytes (stats)
                 raw = await websocket.receive()
                 if raw["type"] == "websocket.receive" and raw.get("text"):
-                    # WebRTC signaling answer/ICE from agent → forward to portals
+                    # WebRTC signaling answer/ICE from agent → forward to portals as TEXT
                     try:
-                        msg = orjson.loads(raw["text"])
-                        if msg.get("t") in ("rtc_answer", "rtc_ice"):
-                            data_str = orjson.dumps(msg).decode()
-                            for portal in list(PORTALS):
-                                try: await portal.send_text(data_str)
-                                except: pass
+                        event = orjson.loads(raw["text"])
+                        await manager.broadcast_text_to_portals(orjson.dumps(event).decode('utf-8'), client_id)
                     except: pass
                 elif raw["type"] == "websocket.receive" and raw.get("bytes"):
+                    # Binary stats/legacy frames from agent
                     data = raw["bytes"]
                     # Update status in registry for stats packets (Type 5)
                     if data[0] == 5:
