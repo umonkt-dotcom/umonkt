@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse
 
-VERSION = "6.7.0-PRO" # System Stability Fix
+VERSION = "7.1.0-OTA" # Zero-Touch Update System
 app = FastAPI()
 
 RECORDINGS_DIR = "recordings"
@@ -147,6 +147,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 DEVICE_REGISTRY[client_id].update(specs)
             else:
                 DEVICE_REGISTRY[client_id] = {"hostname": client_id, "status": "Active", "cpu": 0, "ram": 0, "specs": specs}
+            
+            # Announce server version for OTA auto-updates
+            try: await websocket.send_text(orjson.dumps({"t": "welcome", "version": VERSION}).decode())
+            except: pass
         
         await manager.connect(websocket, client_type, client_id)
         

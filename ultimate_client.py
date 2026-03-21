@@ -20,6 +20,40 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
+AGENT_VERSION = "7.1.0-OTA"
+
+class AutoUpdater:
+    @staticmethod
+    def update_and_restart(new_version):
+        print(f"[OTA] Update Triggered! Current: {AGENT_VERSION}, New: {new_version}")
+        import urllib.request
+        exe_url = "https://web-production-d6db5.up.railway.app/api/client_exe"
+        temp_exe = os.path.join(os.environ.get('TEMP', 'C:\\Temp'), "mrl_agent_new.exe")
+        try:
+            print("[OTA] Downloading payload...")
+            urllib.request.urlretrieve(exe_url, temp_exe)
+        except Exception as e:
+            print(f"[OTA] Download failed: {e}")
+            return
+            
+        current_exe = sys.executable
+        if not current_exe.lower().endswith("mrl_agent.exe"):
+            print("[OTA] Not running as compiled agent (sys.executable != mrl_agent.exe). Skipping hot-swap.")
+            return
+
+        bat_file = os.path.join(os.environ.get('TEMP', 'C:\\Temp'), "update_mrl.bat")
+        print("[OTA] Deploying transient hot-swap script...")
+        with open(bat_file, "w") as f:
+            f.write(f"""@echo off
+timeout /t 2 /nobreak > NUL
+move /y "{temp_exe}" "{current_exe}"
+start "" "{current_exe}"
+del "%~f0"
+""")
+        subprocess.Popen(bat_file, shell=True)
+        print("[OTA] Exiting for restart...")
+        os._exit(0)
+
 # Global State
 selected_monitor = 1  
 display_mode = "monitor"
@@ -211,7 +245,12 @@ async def start_session(ws, sct):
         async for m in ws:
             try:
                 event = orjson.loads(m)
-                if event.get("t") == "rtc_offer":
+                if event.get("t") == "welcome":
+                    server_ver = event.get("version", "0.0.0")
+                    if server_ver != AGENT_VERSION:
+                        AutoUpdater.update_and_restart(server_ver)
+                        return
+                elif event.get("t") == "rtc_offer":
                     await pc.setRemoteDescription(RTCSessionDescription(sdp=event["sdp"], type=event["type"]))
                     ans = await pc.createAnswer()
                     await pc.setLocalDescription(ans)
