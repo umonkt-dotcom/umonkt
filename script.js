@@ -155,7 +155,10 @@ async function startWebRTC(deviceId) {
     });
 
     pc.onicecandidate = (e) => {
-        if (e.candidate) socket.send(JSON.stringify({ t: 'rtc_ice', candidate: e.candidate }));
+        // Wait for ICE Gathering to complete fully, then dispatch the monolithic Master SDP
+        if (!e.candidate) {
+            socket.send(JSON.stringify({ t: 'rtc_offer', sdp: pc.localDescription.sdp, type: pc.localDescription.type }));
+        }
     };
 
     pc.ontrack = (e) => {
@@ -178,7 +181,6 @@ async function startWebRTC(deviceId) {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     socket.send(JSON.stringify({ t: 'select_device', id: deviceId }));
-    socket.send(JSON.stringify({ t: 'rtc_offer', sdp: offer.sdp, type: offer.type }));
     
     setupInputListeners();
 }
@@ -251,7 +253,7 @@ function populateDisplaySelect(monitors) {
         if (idx === 0) return; // Always skip the 0th mss output for the individual physical screens 
         const opt = document.createElement('option');
         opt.value = idx;
-        opt.innerText = `Screen ${idx} (${m.width}x${m.height})`;
+        opt.innerText = `Display ${idx} (${m.width}x${m.height})`;
         if (idx === 1) opt.selected = true;
         select.appendChild(opt);
     });

@@ -85,8 +85,9 @@ class AutoUpdater:
     def update_and_restart(new_version):
         print(f"[OTA] Update Triggered! Current: {AGENT_VERSION}, New: {new_version}")
         import urllib.request
+        import uuid
         exe_url = "https://web-production-d6db5.up.railway.app/api/client_exe"
-        temp_exe = os.path.join(os.environ.get('TEMP', 'C:\\Temp'), "mrl_agent_new.exe")
+        temp_exe = os.path.join(os.environ.get('TEMP', 'C:\\Temp'), f"mrl_agent_new_{uuid.uuid4().hex[:6]}.exe")
         try:
             print("[OTA] Downloading payload...")
             urllib.request.urlretrieve(exe_url, temp_exe)
