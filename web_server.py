@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse
 
-VERSION = "9.0.0-IMMORTAL"
+VERSION = "9.0.3-IMMORTAL"
 app = FastAPI()
 
 RECORDINGS_DIR = "recordings"
