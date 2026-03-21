@@ -9,7 +9,6 @@ import json
 import threading
 import mss
 import websockets
-from PIL import Image
 import psutil
 import getpass
 import platform
@@ -20,7 +19,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "7.1.0-OTA"
+AGENT_VERSION = "8.0.0-ULTRA"
 
 class AutoUpdater:
     @staticmethod
@@ -146,17 +145,26 @@ class ScreenVideoTrack(VideoStreamTrack):
             
             mon = self.sct.monitors[mon_idx]
             sct_img = self.sct.grab(mon)
-            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             
-            w, h = img.size
+            # ZERO COPY: Inject raw BGRA byte buffer directly into C-memory FFmpeg VideoFrame
+            frame = av.VideoFrame(width=sct_img.width, height=sct_img.height, format='bgra')
+            frame.planes[0].update(sct_img.bgra)
+            
+            w = sct_img.width
+            h = sct_img.height
             limit = 960 if current_quality < 60 else 1280
+            
+            # Offload downscaling and colorspace conversion to FFmpeg's blazing fast `swscale`
             if w > limit:
                 new_h = int(h * (limit / w))
-                img = img.resize((limit, new_h), Image.Resampling.BILINEAR)
-        except:
-            img = Image.new("RGB", (960, 540), (0, 0, 0))
+                frame = frame.reformat(width=limit, height=new_h, format='yuv420p')
+            else:
+                frame = frame.reformat(format='yuv420p')
+        except Exception as e:
+            print("Zero-Copy Frame Gen Error:", e)
+            frame = av.VideoFrame(width=960, height=540, format='yuv420p')
+            for p in frame.planes: p.update(b'\x00' * p.buffer_size)
 
-        frame = av.VideoFrame.from_image(img)
         frame.pts = pts
         frame.time_base = time_base
         return frame
