@@ -67,9 +67,8 @@ class ConnectionManager:
         else:
             CLIENTS[client_id] = websocket
             if client_id not in DEVICE_REGISTRY:
-                DEVICE_REGISTRY[client_id] = {"hostname": client_id, "user": "Unknown", "status": "Active", "ram": 0, "disk": 0}
-            else:
-                DEVICE_REGISTRY[client_id]["status"] = "Active"
+                DEVICE_REGISTRY[client_id] = {"hostname": client_id, "status": "Active", "cpu": 0, "ram": 0, "specs": {}}
+            DEVICE_REGISTRY[client_id]["status"] = "Active"
             save_registry()
 
     def disconnect(self, websocket: WebSocket):
