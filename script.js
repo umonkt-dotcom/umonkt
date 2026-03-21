@@ -37,7 +37,8 @@ function connect() {
 }
 
 function handleMessage(msg) {
-    if (msg.t === 'rtc_offer') handleRtcOffer(msg);
+    if (msg.t === 'rtc_offer') handleRtcOffer(msg); // Optional fallback if agent offers
+    else if (msg.t === 'rtc_answer') handleRtcAnswer(msg);
     else if (msg.t === 'rtc_ice') pc?.addIceCandidate(new RTCIceCandidate(msg.candidate));
     else if (msg.t === 'monitors') populateDisplaySelect(msg.data);
     else if (msg.t === 'devices') {
@@ -165,10 +166,18 @@ async function startWebRTC(deviceId) {
     setupInputListeners();
 }
 
-async function handleRtcOffer(msg) {
-    // If agent sends an offer (less common in our current flow but handled)
+async function handleRtcAnswer(msg) {
     if (!pc) return;
     await pc.setRemoteDescription(new RTCSessionDescription(msg));
+}
+
+async function handleRtcOffer(msg) {
+    // Fallback if agent initiates (not used in current flow)
+    if (!pc) return;
+    await pc.setRemoteDescription(new RTCSessionDescription(msg));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.send(JSON.stringify({ t: 'rtc_answer', sdp: answer.sdp, type: answer.type }));
 }
 
 function disconnectSession() {

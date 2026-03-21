@@ -38,6 +38,20 @@ def parse_key(key_str):
     if len(key_str) == 1: return key_str
     return getattr(Key, key_str, key_str)
 
+def get_client_id():
+    import uuid
+    base_dir = os.environ.get('APPDATA') or os.environ.get('HOME') or os.path.expanduser('~')
+    id_file = os.path.join(base_dir, '.mrl_id')
+    try:
+        if os.path.exists(id_file):
+            with open(id_file, 'r') as f: return f.read().strip()
+    except: pass
+    new_id = str(uuid.uuid4())
+    try:
+        with open(id_file, 'w') as f: f.write(new_id)
+    except: pass
+    return new_id
+
 # -------------------------------------------------------
 # Telemetry
 # -------------------------------------------------------
@@ -229,7 +243,7 @@ async def main_loop():
         try:
             async with websockets.connect(uri) as ws:
                 print("CONNECTED TO PRO SERVER")
-                client_id = socket.gethostname()
+                client_id = get_client_id()
                 specs = get_detailed_specs()
                 # Pass monitors in specs for dashboard selection
                 with mss.mss() as sct:
