@@ -5773,3 +5773,978 @@ Traceback (most recent call last):
     raise TimeoutError("timed out during opening handshake") from exc
 TimeoutError: timed out during opening handshake
 
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 546, in __await_impl__
+    await self.connection.handshake(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 105, in handshake
+    await asyncio.wait(
+    ...<2 lines>...
+    )
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 432, in wait
+    return await _wait(fs, timeout, return_when, loop)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\tasks.py", line 521, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 542, in __await_impl__
+    async with asyncio_timeout(self.open_timeout):
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\MRL\.gemini\antigravity\scratch\legitimate_remote_desktop\ultimate_client.py", line 141, in main
+    global last_clipboard
+                       ^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 590, in __aenter__
+    return await self
+           ^^^^^^^^^^
+  File "C:\Users\MRL\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\websockets\asyncio\client.py", line 581, in __await_impl__
+    raise TimeoutError("timed out during opening handshake") from exc
+TimeoutError: timed out during opening handshake
+
