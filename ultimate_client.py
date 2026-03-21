@@ -54,7 +54,12 @@ last_clipboard = ""
 
 async def safe_send(ws, data):
     async with send_lock:
-        await ws.send(data)
+        if isinstance(data, dict):
+            await ws.send(orjson.dumps(data).decode('utf-8'))
+        elif isinstance(data, str):
+            await ws.send(data)
+        else:
+            await ws.send(data) # bytes
 
 # -------------------------------------------------------
 # WebRTC Tracks
@@ -284,7 +289,7 @@ async def manage_webrtc(ws, camera):
                                     "cpu": psutil.cpu_percent(),
                                     "ram": psutil.virtual_memory().percent
                                 }
-                                dc.send(orjson.dumps({"t": "stats", "data": stats}))
+                                dc.send(orjson.dumps({"t": "stats", "data": stats}).decode())
                             except: break
                             await asyncio.sleep(1)
 
@@ -305,7 +310,7 @@ async def manage_webrtc(ws, camera):
                 await pc.setRemoteDescription(RTCSessionDescription(sdp=msg["sdp"], type=msg["type"]))
                 answer = await pc.createAnswer()
                 await pc.setLocalDescription(answer)
-                await safe_send(ws, orjson.dumps({"t": "rtc_answer", "sdp": pc.localDescription.sdp, "type": pc.localDescription.type}))
+                await safe_send(ws, {"t": "rtc_answer", "sdp": pc.localDescription.sdp, "type": pc.localDescription.type})
             elif msg.get("t") == "rtc_ice" and pc:
                 from aiortc import RTCIceCandidate
                 c = msg["candidate"]
@@ -340,7 +345,7 @@ async def main(server_host):
                     "cpu": f"{psutil.cpu_count()} Cores",
                     "ram": f"{round(psutil.virtual_memory().total / (1024**3))}GB",
                 }
-                await ws.send(orjson.dumps({"type": "client_auth", "id": socket.gethostname(), "specs": specs}))
+                await ws.send(orjson.dumps({"type": "client_auth", "id": socket.gethostname(), "specs": specs}).decode('utf-8'))
 
                 with mss.mss() as sct:
                     try:

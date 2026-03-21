@@ -203,11 +203,17 @@ async def websocket_endpoint(websocket: WebSocket):
     client_id = None
     await websocket.accept()
     try:
-        data = await websocket.receive_text()
-        handshake = orjson.loads(data)
+        raw_msg = await websocket.receive()
+        if "text" in raw_msg:
+            handshake = orjson.loads(raw_msg["text"])
+        elif "bytes" in raw_msg:
+            handshake = orjson.loads(raw_msg["bytes"])
+        else:
+            return # Invalid handshake
+
         if handshake.get("type") == "client_auth":
             client_type = "client"
-            client_id = str(handshake.get("id"))
+            client_id = str(handshake.get("id", "Unknown"))
             if client_id in DEVICE_REGISTRY:
                 DEVICE_REGISTRY[client_id].update(handshake.get("specs", {}))
                 DEVICE_REGISTRY[client_id]["specs"] = handshake.get("specs", {})
