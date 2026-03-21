@@ -113,7 +113,7 @@ function renderDeviceGrid(devices) {
                 <div style="display:flex; gap:8px; flex-wrap:wrap">
                     <div class="spec-mini"><i class="fas fa-microchip"></i> ${specs.cpu || '--'}</div>
                     <div class="spec-mini"><i class="fas fa-memory"></i> ${specs.ram || '--'}</div>
-                    <div class="spec-mini"><i class="fas fa-desktop"></i> ${specs.monitors?.length || 1} Screens</div>
+                    <div class="spec-mini"><i class="fas fa-desktop"></i> ${specs.monitors ? specs.monitors.length - 1 : 1} Screens</div>
                 </div>
             </div>
         `;
@@ -275,7 +275,7 @@ function sendControl(data) {
 // Monitor Switching
 function populateDisplaySelect(monitors) {
     const select = document.getElementById('display-select');
-    select.innerHTML = '<option value="0">All Screens (Combined)</option>';
+    select.innerHTML = monitors.length > 2 ? '<option value="0">Multi-Cam Grid (All Devices)</option>' : '';
     
     monitors.forEach((m, idx) => {
         if (idx === 0) return; // Always skip the 0th mss output for the individual physical screens 
