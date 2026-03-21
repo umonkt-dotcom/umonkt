@@ -354,6 +354,7 @@ async def main_loop():
                 # Pass monitors in specs for dashboard selection
                 with mss.mss() as sct:
                     specs["monitors"] = [{"width": m["width"], "height": m["height"]} for m in sct.monitors]
+                    specs["name"] = f"{socket.gethostname()} \\ {getpass.getuser()}"
                     await ws.send(orjson.dumps({"type": "client_auth", "id": client_id, "specs": specs}).decode())
                     await start_session(ws, sct)
         except Exception as e:

@@ -48,6 +48,15 @@ function handleMessage(msg) {
     }
     else if (msg.t === 'stats') updateStats(msg.data);
     else if (msg.t === 'process_list') renderProcesses(msg.data);
+    else if (msg.t === 'specs') {
+        const s = msg.data || {};
+        document.getElementById('spec-user').innerText = s.user || '--';
+        document.getElementById('spec-os').innerText = s.os || '--';
+        document.getElementById('spec-cpu').innerText = s.cpu || '--';
+        document.getElementById('spec-ram').innerText = s.ram || '--';
+        document.getElementById('spec-disk').innerText = s.disk || '--';
+        document.getElementById('spec-gpu').innerText = s.gpu || '--';
+    }
 }
 
 // Navigation & UI
@@ -149,15 +158,16 @@ async function startWebRTC(deviceId) {
     };
 
     pc.ontrack = (e) => {
-        if (e.track.kind === 'video') {
-            const video = document.getElementById('remote-video');
-            if (e.streams && e.streams[0]) {
-                video.srcObject = e.streams[0];
-            } else {
-                if (!video.srcObject) video.srcObject = new MediaStream();
-                video.srcObject.addTrack(e.track);
-            }
+        if (e.track.kind === 'audio') return; // Skip audio tracks
+        const video = document.getElementById('remote-video');
+        if (e.streams && e.streams[0]) {
+            video.srcObject = e.streams[0];
+        } else {
+            if (!video.srcObject) video.srcObject = new MediaStream();
+            video.srcObject.addTrack(e.track);
         }
+        // Forcible execution of playback for incrementally added streams
+        video.play().catch(err => console.error("Video Play Error:", err));
     };
 
     // Data Channel for Controls
