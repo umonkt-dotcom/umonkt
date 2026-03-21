@@ -189,7 +189,7 @@ function handleTextMessage(msg) {
         serverMetadata = msg.data;
         monitors = msg.data.monitors;
         fetchDevices();
-        populateDisplaySelect(monitors.length);
+        if (monitors && monitors.length > 0) populateDisplaySelect(monitors);
     } else if (msg.t === 'rtc_answer' && pc) {
         // WebRTC answer from agent
         pc.setRemoteDescription(new RTCSessionDescription({ sdp: msg.sdp, type: msg.type }));
@@ -456,23 +456,31 @@ function updateStatusUI(msg) {
     isRecording = isRec;
 }
 
-function populateDisplaySelect(count) {
+function populateDisplaySelect(monitorsList) {
     const select = document.getElementById('display-select');
-    select.innerHTML = '<option value="all">Primary View</option>';
-    for (let i = 0; i < count; i++) {
+    if (!select) return;
+    select.innerHTML = '';
+    
+    monitorsList.forEach((mon, i) => {
         const opt = document.createElement('option');
-        opt.value = i; opt.innerText = `Display ${i + 1}`;
+        opt.value = mon.index;
+        // MSS Monitor 0 is "All", 1+ are physical
+        opt.innerText = mon.index === 0 ? "All Screens" : `Screen ${mon.index}`;
         select.appendChild(opt);
+    });
+    
+    // Add event listener once
+    if (!select.dataset.listener) {
+        select.addEventListener('change', (e) => {
+            const index = e.target.value;
+            sendEvent({ t: 'select_monitor', index: index });
+            showToast(`Switched to Screen ${index == 0 ? 'View All' : index}`);
+        });
+        select.dataset.listener = "true";
     }
 }
 
 function setupControls() {
-    document.getElementById('display-select').addEventListener('change', (e) => {
-        displayMode = e.target.value;
-        document.querySelectorAll('.monitor-view').forEach((img, idx) => {
-            img.classList.toggle('hidden', displayMode !== 'all' && displayMode != idx);
-        });
-    });
     document.getElementById('mouse-control').addEventListener('change', (e) => mouseEnabled = e.target.checked);
     document.getElementById('keyboard-control').addEventListener('change', (e) => keyboardEnabled = e.target.checked);
     document.getElementById('record-control').addEventListener('change', (e) => sendEvent({ t: 'toggle_recording', v: e.target.checked }));

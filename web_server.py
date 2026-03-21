@@ -238,7 +238,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     PORTAL_TO_CLIENT[websocket] = None
                 elif event["t"] == "select_device":
                     PORTAL_TO_CLIENT[websocket] = str(event["id"])
-                elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "clipboard_sync"):
+                elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "clipboard_sync", "select_monitor"):
                     target_client = PORTAL_TO_CLIENT.get(websocket)
                     if target_client:
                         await manager.send_to_client(target_client, event)

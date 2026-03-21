@@ -18,6 +18,7 @@ from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import sounddevice as sd
 import pyperclip
+import getpass
 
 # WebRTC Imports
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCIceCandidate
@@ -32,7 +33,8 @@ SAMPLE_RATE = 48000
 CHANNELS = 2
 webcam_enabled = False
 clipboard_sync_enabled = True
-device_name = "Agent"
+device_name = getpass.getuser()
+selected_monitor = 1 # MSS monitor 1 is "All", 2 is first physical
 
 # --- Controllers ---
 input_lock = threading.Lock()
@@ -68,18 +70,18 @@ class ScreenVideoTrack(VideoStreamTrack):
     def __init__(self, sct):
         super().__init__()
         self.sct = sct
-        self.monitor = sct.monitors[0] # Primary monitor
 
     async def recv(self):
         pts, time_base = await self.next_timestamp()
         
-        # Capture using MSS (Faster than standard PIL, no Numpy needed)
+        # Capture using MSS (Global selected_monitor)
         try:
-            sct_img = self.sct.grab(self.monitor)
-            # Convert to PIL Image for easy resizing/AV conversion
+            # mss.monitors[0] = All, [1] = Monitor 1, etc.
+            # We use global selected_monitor to switch
+            mon = self.sct.monitors[min(len(self.sct.monitors)-1, selected_monitor)]
+            sct_img = self.sct.grab(mon)
             img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
         except:
-            # Fallback if capture fails (Pure PIL, no Numpy)
             img = Image.new("RGB", (1920, 1080), (0, 0, 0))
         
         # Pro-Level Fix: Downscale to 720p for WAN stability
@@ -87,7 +89,6 @@ class ScreenVideoTrack(VideoStreamTrack):
         if w > 1280:
             img = img.resize((1280, int(h * 1280 / w)), Image.Resampling.BILINEAR)
             
-        # Convert to AV frame directly from PIL
         frame = av.VideoFrame.from_image(img)
         frame.pts = pts
         frame.time_base = time_base
@@ -219,6 +220,9 @@ def handle_event(event):
             elif t == "kill_process":
                 p = psutil.Process(event["pid"])
                 p.terminate()
+            elif t == "select_monitor":
+                global selected_monitor
+                selected_monitor = int(event.get("index", 1))
         except: pass
 
 async def manage_webrtc(ws, camera):
@@ -344,6 +348,7 @@ async def main(server_host):
                     "release": platform.release(),
                     "cpu": f"{psutil.cpu_count()} Cores",
                     "ram": f"{round(psutil.virtual_memory().total / (1024**3))}GB",
+                    "monitors": [{"index": i, "w": m["width"], "h": m["height"]} for i, m in enumerate(mss.mss().monitors)]
                 }
                 await ws.send(orjson.dumps({"type": "client_auth", "id": socket.gethostname(), "specs": specs}).decode('utf-8'))
 
