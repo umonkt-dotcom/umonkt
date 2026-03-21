@@ -202,18 +202,49 @@ class ScreenVideoTrack(VideoStreamTrack):
             if mon_idx >= len(self.sct.monitors):
                 mon_idx = min(1, len(self.sct.monitors)-1)
             
-            mon = self.sct.monitors[mon_idx]
-            sct_img = self.sct.grab(mon)
+            if mon_idx == 0 and len(self.sct.monitors) > 2:
+                from PIL import ImageDraw, ImageFont
+                physical_monitors = self.sct.monitors[1:]
+                count = len(physical_monitors)
+                
+                cell_w, cell_h = 1280, 720
+                if count <= 2: cols, rows = count, 1
+                elif count <= 4: cols, rows = 2, 2
+                else: cols, rows = 3, (count + 2) // 3
+                
+                grid_w, grid_h = cols * cell_w, rows * cell_h
+                grid_img = Image.new("RGB", (grid_w, grid_h), (15, 15, 15))
+                draw = ImageDraw.Draw(grid_img)
+                try: font = ImageFont.truetype("arial.ttf", 46)
+                except: font = ImageFont.load_default()
+                
+                for i, mon in enumerate(physical_monitors):
+                    sct_img = self.sct.grab(mon)
+                    img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                    img.thumbnail((cell_w - 6, cell_h - 6), Image.Resampling.BILINEAR)
+                    
+                    col, row = i % cols, i // cols
+                    x = col * cell_w + (cell_w - img.width) // 2
+                    y = row * cell_h + (cell_h - img.height) // 2
+                    
+                    grid_img.paste(img, (x, y))
+                    draw.rectangle([col * cell_w, row * cell_h, (col + 1) * cell_w - 1, (row + 1) * cell_h - 1], outline=(60, 60, 60), width=4)
+                    
+                    box_x, box_y = col * cell_w + 30, row * cell_h + 30
+                    draw.rectangle([box_x, box_y, box_x + 280, box_y + 70], fill=(0, 0, 0))
+                    draw.text((box_x + 20, box_y + 10), f"DISPLAY {i+1}", fill=(255, 255, 255), font=font)
+                
+                img = grid_img
+            else:
+                mon = self.sct.monitors[mon_idx]
+                sct_img = self.sct.grab(mon)
+                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             
-            # MEMORY ALIGNMENT FIX: Use PIL as a native struct wrapper to guarantee format stride alignment
-            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             frame = av.VideoFrame.from_image(img)
             
-            w = sct_img.width
-            h = sct_img.height
-            limit = 960 if current_quality < 60 else 1280
+            w, h = img.width, img.height
+            limit = 1280 if (mon_idx == 0 or current_quality >= 60) else 960
             
-            # Offload downscaling and colorspace conversion to FFmpeg's blazing fast `swscale` C-routines
             if w > limit:
                 new_h = int(h * (limit / w))
                 frame = frame.reformat(width=limit, height=new_h, format='yuv420p')
