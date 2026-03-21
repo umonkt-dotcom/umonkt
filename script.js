@@ -9,7 +9,6 @@ let keyboardEnabled = false;
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
     connect();
-    setInterval(fetchDevices, 5000);
 });
 
 function connect() {
@@ -39,6 +38,10 @@ function handleMessage(msg) {
     if (msg.t === 'rtc_offer') handleRtcOffer(msg);
     else if (msg.t === 'rtc_ice') pc?.addIceCandidate(new RTCIceCandidate(msg.candidate));
     else if (msg.t === 'monitors') populateDisplaySelect(msg.data);
+    else if (msg.t === 'devices') {
+        renderDeviceGrid(msg.data);
+        renderActiveSidebar(msg.data);
+    }
     else if (msg.t === 'stats') updateStats(msg.data);
     else if (msg.t === 'process_list') renderProcesses(msg.data);
 }
@@ -201,16 +204,23 @@ function sendControl(data) {
 // Monitor Switching
 function populateDisplaySelect(monitors) {
     const select = document.getElementById('display-select');
-    select.innerHTML = '<option value="all">All Screens (Combined)</option>';
-    monitors.forEach(m => {
+    // If multiple monitors exist, we start at Index 1 (Screen 1) as default
+    // Index 0 in MSS is usually "All Screens Combined"
+    select.innerHTML = monitors.length > 1 ? '<option value="0">All Screens (Combined)</option>' : '';
+    
+    monitors.forEach((m, idx) => {
+        if (idx === 0 && monitors.length > 1) return; // Skip "All" for individual list if more than 1
         const opt = document.createElement('option');
-        opt.value = m.index;
-        opt.innerText = `Monitor ${m.index + 1} (${m.width}x${m.height})`;
+        opt.value = idx;
+        opt.innerText = `Screen ${idx} (${m.width}x${m.height})`;
+        if (idx === 1 || (idx === 0 && monitors.length === 1)) opt.selected = true;
         select.appendChild(opt);
     });
 
     select.onchange = (e) => {
-        socket.send(JSON.stringify({ t: 'select_monitor', index: e.target.value }));
+        if (dataChannel && dataChannel.readyState === 'open') {
+            dataChannel.send(JSON.stringify({ t: 'select_monitor', index: parseInt(e.target.value) }));
+        }
     };
 }
 

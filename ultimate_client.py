@@ -22,19 +22,24 @@ import getpass
 
 # WebRTC Imports
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCIceCandidate
-from aiortc.contrib.media import MediaStreamTrack
+from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 import av
+
+# Global State
+selected_monitor = 1  # Standardize to Screen 1 default
+display_mode = "monitor"
+relay = MediaRelay()
 
 # --- Settings ---
 QUALITY = 50
-TARGET_FPS = 30 
-BITRATE = 1500000 
+TARGET_FPS = 30
+BITRATE = 1500000
 SAMPLE_RATE = 48000
 CHANNELS = 2
 webcam_enabled = False
 clipboard_sync_enabled = True
 device_name = getpass.getuser()
-selected_monitor = 1 # MSS monitor 1 is "All", 2 is first physical
+# selected_monitor = 1 # MSS monitor 1 is "All", 2 is first physical - Moved to Global State
 
 # --- Controllers ---
 input_lock = threading.Lock()
@@ -71,24 +76,42 @@ class ScreenVideoTrack(VideoStreamTrack):
         super().__init__()
         self.sct = sct
 
+    def update_settings(self, settings: dict):
+        global selected_monitor
+        if "monitor" in settings:
+            try:
+                val = int(settings["monitor"])
+                # SAFE MONITOR SELECTION: skip index 0 if it's the virtual combined screen
+                if val < 1 and len(self.sct.monitors) > 1: val = 1
+                selected_monitor = val
+                print(f"[DEBUG] SWAPPING TO MONITOR: {selected_monitor} (Total: {len(self.sct.monitors)-1})")
+            except: pass
+
     async def recv(self):
         pts, time_base = await self.next_timestamp()
-        
-        # Capture using MSS (Global selected_monitor)
+
         try:
-            # mss.monitors[0] = All, [1] = Monitor 1, etc.
-            # We use global selected_monitor to switch
-            mon = self.sct.monitors[min(len(self.sct.monitors)-1, selected_monitor)]
+            # PRO LEVEL MONITOR SELECTION
+            # sct.monitors[0] is often the "All Screens Combined" (virtual).
+            # We default to 1, and only fall back to 0 if only 1 monitor exists total.
+            mon_idx = selected_monitor
+            if mon_idx >= len(self.sct.monitors):
+                mon_idx = min(1, len(self.sct.monitors)-1)
+
+            mon = self.sct.monitors[mon_idx]
             sct_img = self.sct.grab(mon)
             img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        except:
-            img = Image.new("RGB", (1920, 1080), (0, 0, 0))
-        
-        # Pro-Level Fix: Downscale to 720p for WAN stability
-        w, h = img.size
-        if w > 1280:
-            img = img.resize((1280, int(h * 1280 / w)), Image.Resampling.BILINEAR)
-            
+
+            # LAG FIX: Downscale if too large (AnyDesk style)
+            w, h = img.size
+            if w > 960:
+                new_h = int(h * (960 / w))
+                img = img.resize((960, new_h), Image.Resampling.BILINEAR)
+        except Exception as e:
+            print(f"[ERROR] Capture failed: {e}. Falling back to black frame.")
+            # Black frame fallback to prevent crash
+            img = Image.new("RGB", (960, 540), (0, 0, 0))
+
         frame = av.VideoFrame.from_image(img)
         frame.pts = pts
         frame.time_base = time_base
@@ -182,7 +205,7 @@ async def stream_screen_jpeg(ws, camera):
             # Basic Stats
             info = {"cpu": psutil.cpu_percent(), "ram": psutil.virtual_memory().percent}
             await safe_send(ws, struct.pack('BB', 5, 0) + json.dumps(info).encode())
-            
+
             elapsed = time.perf_counter() - start
             await asyncio.sleep(max(0, (1.0 / 10) - elapsed)) # Lower FPS for JPEG fallback
         except: await asyncio.sleep(1)
@@ -252,29 +275,45 @@ async def manage_webrtc(ws, camera):
 
                 # Force H264 for better compression/lag reduction
                 # Pro-Level Fix: Ultra-Fast Preset + Zero Latency Tune
-                transceiver = pc.addTransceiver("video", direction="sendonly")
+                video_track = ScreenVideoTrack(camera)
+                transceiver = pc.addTransceiver(video_track, direction="sendonly")
                 capabilities = RTCRtpSender.getCapabilities("video")
                 h264_codecs = [c for c in capabilities.codecs if c.name == "H264"]
                 if h264_codecs:
                     transceiver.setCodecPreferences(h264_codecs)
-                
+
+                # STREAM OPTIMIZATION (AnyDesk Level Control)
+                # capabilities = RTCRtpSender.getCapabilities("video") # Already defined above
+                params = transceiver.sender.getParameters()
+
+                # Force target bitrate and frame rate
+                if not params.encodings:
+                    from aiortc import RTCRtpEncodingParameters
+                    params.encodings = [RTCRtpEncodingParameters(maxBitrate=800000, maxFramerate=20)]
+                else:
+                    params.encodings[0].maxBitrate = 800000  # 800kbps max
+                    params.encodings[0].maxFramerate = 20    # 20 FPS
+
+                await transceiver.sender.setParameters(params)
+
                 # Add tracks manually now
-                pc.addTrack(ScreenVideoTrack(camera))
+                # pc.addTrack(ScreenVideoTrack(camera)) # Replaced by transceiver.addTransceiver(video_track, ...)
                 pc.addTrack(SystemAudioTrack())
-                
-                # Set encoding parameters (Bitrate/FPS)
+
+                # Set encoding parameters (Bitrate/FPS) - This block is now largely redundant due to the explicit transceiver setup above
                 for sender in pc.getSenders():
                     if sender.track and sender.track.kind == "video":
-                        params = sender.getParameters()
-                        if not params.encodings:
-                            from aiortc import RTCRtpEncodingParameters
-                            params.encodings = [RTCRtpEncodingParameters(maxBitrate=BITRATE, maxFramerate=TARGET_FPS)]
-                        else:
-                            params.encodings[0].maxBitrate = BITRATE
-                            params.encodings[0].maxFramerate = TARGET_FPS
-
-                        try: await sender.setParameters(params)
-                        except: pass
+                        # This part is now handled by the transceiver.sender.setParameters(params) above
+                        # params = sender.getParameters()
+                        # if not params.encodings:
+                        #     from aiortc import RTCRtpEncodingParameters
+                        #     params.encodings = [RTCRtpEncodingParameters(maxBitrate=BITRATE, maxFramerate=TARGET_FPS)]
+                        # else:
+                        #     params.encodings[0].maxBitrate = BITRATE
+                        #     params.encodings[0].maxFramerate = TARGET_FPS
+                        # try: await sender.setParameters(params)
+                        # except: pass
+                        pass # Handled by explicit transceiver setup
 
                 # Setup Dummy Webcam (Disabled for stability)
                 # webcam_track = WebcamVideoTrack()
@@ -303,6 +342,8 @@ async def manage_webrtc(ws, camera):
                             event = orjson.loads(m)
                             if event.get("t") == "get_processes":
                                 asyncio.create_task(send_process_list_dc(dc))
+                            elif event.get("t") == "select_monitor":
+                                video_track.update_settings({"monitor": event.get("index", 1)})
                             elif event.get("t") == "toggle_webcam":
                                 pass # Webcam disabled for stability
 
