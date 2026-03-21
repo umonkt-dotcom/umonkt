@@ -1,0 +1,11 @@
+recordings/
+devices.json
+__pycache__/
+*.pyc
+.env
+tmp/
+*.mp4
+mrl_service/
+mrl_agent.pyw
+build/
+dist/

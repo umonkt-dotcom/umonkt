@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+mss
+Pillow
+psutil
+sounddevice
+websockets
+pynput
+cffi
+aiortc
+av
+dxcam
+pyperclip
+opencv-python-headless
+numpy
+orjson
+uvloop
