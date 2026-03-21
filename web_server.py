@@ -12,7 +12,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-VERSION = "6.1.0-LAYOUT-FIX" # Trigger Clean Build
+VERSION = "6.2.0-STABLE" # Trigger Clean Build
 app = FastAPI()
 
 
