@@ -24,23 +24,25 @@
         .nav-item { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:6px; color:var(--text-muted); cursor:pointer; transition:0.15s; font-size:13px; font-weight:600; margin-bottom:4px; }
         .nav-item:hover { background:#151515; color:white; }
         .nav-item.active { background:#1A1A1A; color:var(--pro-green); border:1px solid var(--pro-green-dim); }
-        .main-area { flex:1; display:flex; flex-direction:column; position:relative; background:#000; }
-        .page-view { position:absolute; top:0; left:0; right:0; bottom:0; display:flex; flex-direction:column; padding:35px; opacity:0; transform:scale(0.98); pointer-events:none; transition:0.2s; will-change:opacity, transform; }
+        .main-area { flex:1; display:flex; flex-direction:column; background:#000; overflow:hidden; }
+        .page-container { flex:1; position:relative; overflow:hidden; }
+        .page-view { position:absolute; top:0; left:0; right:0; bottom:0; display:flex; flex-direction:column; padding:25px 35px; opacity:0; transform:scale(0.99); pointer-events:none; transition:0.2s cubic-bezier(0.4, 0, 0.2, 1); will-change:opacity, transform; overflow-y:auto; }
         .page-view.active { opacity:1; transform:scale(1); pointer-events:auto; z-index:5; }
-        .device-card { background:var(--card-bg); border-radius:6px; padding:18px; border:1px solid var(--border); cursor:pointer; transition:0.1s; }
-        .device-card:hover { border-color:var(--pro-green); transform:translateY(-2px); }
-        .screens-grid { flex:1; display:flex; justify-content:center; align-items:center; background:#000; overflow:hidden; }
+        .device-card { background:var(--card-bg); border-radius:8px; padding:20px; border:1px solid var(--border); cursor:pointer; transition:0.2s; display:flex; flex-direction:column; gap:8px; }
+        .device-card:hover { border-color:var(--pro-green); background:#151515; transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+        .device-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px; }
+        .screens-grid { flex:1; display:flex; justify-content:center; align-items:center; background:#000; overflow:hidden; position:relative; }
         .monitor-view { max-height:100%; max-width:100%; image-rendering:-webkit-optimize-contrast; pointer-events:none; }
-        .main-header { display:flex; align-items:center; padding:15px 35px; border-bottom:1px solid var(--border); background:rgba(10,10,10,0.8); backdrop-filter:blur(10px); }
+        .main-header { display:flex; align-items:center; padding:15px 35px; border-bottom:1px solid var(--border); background:rgba(10,10,10,0.9); backdrop-filter:blur(15px); z-index:20; height:60px; box-sizing:border-box; }
         .pro-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
         .dot { height:8px; width:8px; border-radius:50%; margin-right:10px; }
         .dot.green { background:var(--pro-green); box-shadow: 0 0 10px var(--pro-green); }
         .dot.gray { background:#555; }
-        .main-footer { display:flex; justify-content:space-between; padding:10px 35px; background:var(--sidebar-bg); border-top:1px solid var(--border); font-size:11px; color:var(--text-muted); font-weight:600; }
+        .main-footer { display:flex; justify-content:space-between; padding:10px 35px; background:var(--sidebar-bg); border-top:1px solid var(--border); font-size:11px; color:var(--text-muted); font-weight:600; min-height:35px; }
         .hidden { display:none !important; }
-        .btn { background:var(--pro-green-dim); border:1px solid var(--pro-green); color:var(--pro-green); padding:8px 15px; border-radius:4px; font-weight:700; cursor:pointer; transition:0.2s; }
-        .btn:hover { background:var(--pro-green); color:black; }
-        .script-box { background:#000; border:1px solid var(--border); padding:15px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:12px; color:white; }
+        .btn { background:var(--pro-green-dim); border:1px solid var(--pro-green); color:var(--pro-green); padding:10px 20px; border-radius:6px; font-weight:700; cursor:pointer; transition:0.2s; font-size:13px; display:inline-flex; align-items:center; gap:8px; }
+        .btn:hover { background:var(--pro-green); color:black; transform:translateY(-1px); }
+        .script-box { background:#000; border:1px solid var(--border); padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; font-family:'Cascadia Code', 'Fira Code', monospace; font-size:12px; color:white; margin-top:10px; }
         #remote-video { max-width:100%; max-height:100%; background:#000; }
         .pro-table { width:100%; border-collapse:collapse; }
         .pro-table th { background:#0F0F0F; padding:12px; text-align:left; font-size:11px; color:var(--text-muted); text-transform:uppercase; border-bottom:1px solid var(--border); }
@@ -92,6 +94,7 @@
                 </div>
                 <div id="active-host-name" class="pro-label" style="margin-left:auto; color:white;">NO ACTIVE SYSTEM</div>
             </header>
+            <div class="page-container">
             <div id="view-dashboard" class="page-view active">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h1>Systems Management</h1>
@@ -121,8 +124,10 @@
                 <h1>Operation Archive</h1>
                 <tbody id="recordings-body"></tbody>
             </div>
+                </div>
+            </div>
             <footer class="main-footer">
-                <div>MRL- Remote@T | Zero-Wait Edition</div>
+                <div>MRL- Remote@T | v6.0.0-OPTIMIZED</div>
                 <div id="footer-stats">P2P: INACTIVE | FPS: 0</div>
             </footer>
         </div>
