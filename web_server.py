@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse
 
-VERSION = "8.0.0-ULTRA" # Hyper-Optimized & Cinematic Redesign
+VERSION = "9.0.0-IMMORTAL"
 app = FastAPI()
 
 RECORDINGS_DIR = "recordings"
