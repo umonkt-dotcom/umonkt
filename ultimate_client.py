@@ -202,11 +202,6 @@ async def start_session(ws, sct):
 
     # Video Transceiver
     transceiver = pc.addTransceiver(video_track, direction="sendonly")
-    params = transceiver.sender.getParameters()
-    if not params.encodings:
-        from aiortc import RTCRtpEncodingParameters
-        params.encodings = [RTCRtpEncodingParameters(maxBitrate=BITRATE, maxFramerate=60)]
-    await transceiver.sender.setParameters(params)
 
     # Audio Track
     pc.addTrack(SystemAudioTrack())
