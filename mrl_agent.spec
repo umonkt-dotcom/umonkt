@@ -12,7 +12,7 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[
         'tkinter', 'matplotlib', 'pandas', 'unittest', 'pydoc', 
-        'IPython', 'notebook', 'pygments'
+        'IPython', 'notebook', 'pygments', 'numpy', 'cv2', 'dxcam'
     ],
     noarchive=False,
     optimize=2,

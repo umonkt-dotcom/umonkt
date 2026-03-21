@@ -9,6 +9,7 @@ import struct
 import argparse
 import threading
 
+import mss
 import websockets
 from PIL import Image
 import psutil
@@ -16,9 +17,6 @@ import orjson
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import sounddevice as sd
-import numpy as np
-import cv2 # NEW: For Webcam support
-import dxcam
 import pyperclip
 
 # WebRTC Imports
@@ -62,35 +60,30 @@ async def safe_send(ws, data):
 # WebRTC Tracks
 # -------------------------------------------------------
 class ScreenVideoTrack(VideoStreamTrack):
-    def __init__(self, camera):
+    def __init__(self, sct):
         super().__init__()
-        self.camera = camera
-        self.last_frame = None
+        self.sct = sct
+        self.monitor = sct.monitors[0] # Primary monitor
 
     async def recv(self):
         pts, time_base = await self.next_timestamp()
         
-        # Pro-Level: Use get_latest_frame() for zero-latency capture
-        frame_data = self.camera.get_latest_frame()
+        # Capture using MSS (Faster than standard PIL, no Numpy needed)
+        try:
+            sct_img = self.sct.grab(self.monitor)
+            # Convert to PIL Image for easy resizing/AV conversion
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+        except:
+            # Fallback if capture fails (Pure PIL, no Numpy)
+            img = Image.new("RGB", (1920, 1080), (0, 0, 0))
         
-        if frame_data is None:
-            if self.last_frame is None:
-                # Debug: No frame from DXCAM
-                # print("⚠️ NO FRAME FROM DXCAM")
-                frame_data = np.zeros((1080, 1920, 3), dtype=np.uint8)
-            else:
-                frame_data = self.last_frame
-        else:
-            self.last_frame = frame_data
-
-        
-        # Native conversion to AV frame
-        # Pro-Level Fix: Downscale to 720p for WAN stability (AnyDesk Standard)
-        h, w, _ = frame_data.shape
+        # Pro-Level Fix: Downscale to 720p for WAN stability
+        w, h = img.size
         if w > 1280:
-            frame_data = cv2.resize(frame_data, (1280, int(h * 1280 / w)))
+            img = img.resize((1280, int(h * 1280 / w)), Image.Resampling.BILINEAR)
             
-        frame = av.VideoFrame.from_ndarray(frame_data, format='rgb24')
+        # Convert to AV frame directly from PIL
+        frame = av.VideoFrame.from_image(img)
         frame.pts = pts
         frame.time_base = time_base
         return frame
@@ -108,31 +101,8 @@ class SystemAudioTrack(AudioStreamTrack):
         frame.pts = pts
         frame.time_base = time_base
         frame.sample_rate = SAMPLE_RATE
-class WebcamVideoTrack(VideoStreamTrack):
-    def __init__(self):
-        super().__init__()
-        self.cap = cv2.VideoCapture(0)
-        self.last_frame = None
+# Removed WebcamVideoTrack for stability (Numpy dependency)
 
-    async def recv(self):
-        pts, time_base = await self.next_timestamp()
-        ret, frame_data = await asyncio.to_thread(self.cap.read)
-        if not ret:
-            if self.last_frame is None:
-                frame_data = np.zeros((480, 640, 3), dtype=np.uint8)
-            else:
-                frame_data = self.last_frame
-        else:
-            frame_data = cv2.cvtColor(frame_data, cv2.COLOR_BGR2RGB)
-            self.last_frame = frame_data
-        
-        frame = av.VideoFrame.from_ndarray(frame_data, format='rgb24')
-        frame.pts = pts
-        frame.time_base = time_base
-        return frame
-
-    def __del__(self):
-        if hasattr(self, 'cap'): self.cap.release()
 
 # -------------------------------------------------------
 # Elite Features: Clipboard & Processes
@@ -297,11 +267,10 @@ async def manage_webrtc(ws, camera):
                         try: await sender.setParameters(params)
                         except: pass
 
-                # Setup Webcam Track
-                webcam_track = WebcamVideoTrack()
-                webcam_sender = pc.addTrack(webcam_track)
-                # Store sender for toggle logic
-                await webcam_sender.replaceTrack(None)
+                # Setup Dummy Webcam (Disabled for stability)
+                # webcam_track = WebcamVideoTrack()
+                # webcam_sender = pc.addTrack(webcam_track)
+                # await webcam_sender.replaceTrack(None)
 
 
                 @pc.on("datachannel")
@@ -326,9 +295,7 @@ async def manage_webrtc(ws, camera):
                             if event.get("t") == "get_processes":
                                 asyncio.create_task(send_process_list_dc(dc))
                             elif event.get("t") == "toggle_webcam":
-                                is_on = event.get("v", False)
-                                # Peer-Level Toggle: Use stored webcam_sender for precision
-                                await webcam_sender.replaceTrack(webcam_track if is_on else None)
+                                pass # Webcam disabled for stability
 
 
                             else:
@@ -375,15 +342,10 @@ async def main(server_host):
                 }
                 await ws.send(orjson.dumps({"type": "client_auth", "id": socket.gethostname(), "specs": specs}))
 
-                # Global AnyDesk Fix: device_idx=0, output_idx=None for all monitors, native video_mode=True
-                camera = dxcam.create(device_idx=0, output_idx=None, output_color="RGB")
-                camera.start(target_fps=60, video_mode=True)
-                # Removed stream_screen_jpeg - PURE WebRTC ONLY
-                try:
-                    await asyncio.gather(manage_webrtc(ws, camera), monitor_clipboard(ws))
-                finally:
-                    camera.stop()
-                    del camera
+                with mss.mss() as sct:
+                    try:
+                        await asyncio.gather(manage_webrtc(ws, sct), monitor_clipboard(ws))
+                    except: pass
 
         except: await asyncio.sleep(5)
 
