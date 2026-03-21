@@ -28,12 +28,13 @@ import av
 
 # --- Settings ---
 QUALITY = 50
-TARGET_FPS = 30 # Standardize to 30 for stability
-BITRATE = 1500000 # 1.5 Mbps for WAN fluidity
+TARGET_FPS = 30 
+BITRATE = 1500000 
 SAMPLE_RATE = 48000
 CHANNELS = 2
 webcam_enabled = False
 clipboard_sync_enabled = True
+device_name = "Agent"
 
 # --- Controllers ---
 input_lock = threading.Lock()
@@ -363,7 +364,16 @@ async def main(server_host):
         try:
             async with websockets.connect(uri, ssl=ssl_context if "wss" in uri else None) as ws:
                 print("CONNECTED TO SERVER")
-                await ws.send(orjson.dumps({"type": "client_auth", "id": socket.gethostname()}))
+                import platform
+                specs = {
+                    "name": device_name,
+                    "hostname": socket.gethostname(),
+                    "platform": platform.system(),
+                    "release": platform.release(),
+                    "cpu": f"{psutil.cpu_count()} Cores",
+                    "ram": f"{round(psutil.virtual_memory().total / (1024**3))}GB",
+                }
+                await ws.send(orjson.dumps({"type": "client_auth", "id": socket.gethostname(), "specs": specs}))
 
                 # Global AnyDesk Fix: device_idx=0, output_idx=None for all monitors, native video_mode=True
                 camera = dxcam.create(device_idx=0, output_idx=None, output_color="RGB")
@@ -380,5 +390,7 @@ async def main(server_host):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--server", default="web-production-d6db5.up.railway.app")
+    parser.add_argument("--name", default="Agent")
     args = parser.parse_args()
+    device_name = args.name
     asyncio.run(main(args.server))

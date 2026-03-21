@@ -191,6 +191,17 @@ async def websocket_endpoint(websocket: WebSocket):
         if handshake.get("type") == "client_auth":
             client_type = "client"
             client_id = str(handshake.get("id"))
+            if client_id in DEVICE_REGISTRY:
+                DEVICE_REGISTRY[client_id].update(handshake.get("specs", {}))
+                DEVICE_REGISTRY[client_id]["specs"] = handshake.get("specs", {})
+            else:
+                DEVICE_REGISTRY[client_id] = {
+                    "hostname": client_id,
+                    "status": "Active",
+                    "cpu": 0,
+                    "ram": 0,
+                    "specs": handshake.get("specs", {})
+                }
         
         await manager.connect(websocket, client_type, client_id)
         

@@ -12,11 +12,10 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[
         'tkinter', 'matplotlib', 'pandas', 'unittest', 'pydoc', 
-        'email', 'http', 'xml', 'html', 'IPython', 'notebook', 
-        'pygments', 'distutils', 'setuptools'
+        'IPython', 'notebook', 'pygments'
     ],
     noarchive=False,
-    optimize=2, # Enable bytecode optimization
+    optimize=2,
 )
 pyz = PYZ(a.pure)
 
