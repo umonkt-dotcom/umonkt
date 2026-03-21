@@ -17,7 +17,7 @@ import subprocess
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import av
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
 AGENT_VERSION = "7.1.0-OTA"
@@ -193,8 +193,14 @@ async def send_process_list_dc(dc):
     except: pass
 
 async def start_session(ws, sct):
-    pc = RTCPeerConnection()
+    pc = RTCPeerConnection(configuration=RTCConfiguration(
+        iceServers=[RTCIceServer(urls=["stun:stun.l.google.com:19302"])]
+    ))
     video_track = ScreenVideoTrack(sct)
+
+    @pc.on("iceconnectionstatechange")
+    async def on_iceconnectionstatechange():
+        print(f"ICE Connection State is {pc.iceConnectionState}")
 
     @pc.on("datachannel")
     def on_datachannel(dc):

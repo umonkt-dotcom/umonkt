@@ -150,7 +150,13 @@ async function startWebRTC(deviceId) {
 
     pc.ontrack = (e) => {
         if (e.track.kind === 'video') {
-            document.getElementById('remote-video').srcObject = e.streams[0];
+            const video = document.getElementById('remote-video');
+            if (e.streams && e.streams[0]) {
+                video.srcObject = e.streams[0];
+            } else {
+                if (!video.srcObject) video.srcObject = new MediaStream();
+                video.srcObject.addTrack(e.track);
+            }
         }
     };
 
