@@ -9,6 +9,8 @@ let keyboardEnabled = false;
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
     connect();
+    setupDraggable('webcam-overlay');
+    setupSliders();
 });
 
 function connect() {
@@ -41,6 +43,7 @@ function handleMessage(msg) {
     else if (msg.t === 'devices') {
         renderDeviceGrid(msg.data);
         renderActiveSidebar(msg.data);
+        updateDetailedSpecs(msg.data.find(d => d.hostname === selectedDeviceId));
     }
     else if (msg.t === 'stats') updateStats(msg.data);
     else if (msg.t === 'process_list') renderProcesses(msg.data);
@@ -108,10 +111,21 @@ function renderDeviceGrid(devices) {
 function renderActiveSidebar(devices) {
     const container = document.getElementById('dynamic-remote-links');
     container.innerHTML = devices.filter(d => d.status === 'Active').map(d => `
-        <div class="nav-item" onclick="selectDevice('${d.hostname}')">
+        <div class="nav-item ${selectedDeviceId === d.hostname ? 'active' : ''}" onclick="selectDevice('${d.hostname}')">
             <i class="fas fa-desktop" style="color:var(--pro-green)"></i> ${d.specs?.name || d.hostname}
         </div>
     `).join('');
+}
+
+function updateDetailedSpecs(device) {
+    if (!device) return;
+    const s = device.specs || {};
+    document.getElementById('spec-user').innerText = s.user || '--';
+    document.getElementById('spec-os').innerText = s.os || '--';
+    document.getElementById('spec-cpu').innerText = s.cpu || '--';
+    document.getElementById('spec-ram').innerText = s.ram || '--';
+    document.getElementById('spec-disk').innerText = s.disk || '--';
+    document.getElementById('spec-gpu').innerText = s.gpu || '--';
 }
 
 // Session Logic
@@ -252,8 +266,59 @@ function killProcess(pid) {
 // Control Toggles
 document.getElementById('mouse-control').onchange = (e) => mouseEnabled = e.target.checked;
 document.getElementById('keyboard-control').onchange = (e) => keyboardEnabled = e.target.checked;
-document.getElementById('webcam-control').onchange = (e) => {
-    const v = document.getElementById('webcam-video');
-    v.classList.toggle('hidden', !e.target.checked);
-    socket.send(JSON.stringify({ t: 'toggle_webcam', v: e.target.checked }));
+document.getElementById('audio-toggle').onchange = (e) => {
+    sendControl({ t: 'toggle_audio', v: e.target.checked });
 };
+document.getElementById('webcam-control').onchange = (e) => {
+    const v = document.getElementById('webcam-overlay');
+    v.classList.toggle('hidden', !e.target.checked);
+    sendControl({ t: 'toggle_webcam', v: e.target.checked });
+};
+
+// Advanced Controls logic
+function setupSliders() {
+    const fps = document.getElementById('slider-fps');
+    const qual = document.getElementById('slider-quality');
+    
+    fps.oninput = (e) => {
+        document.getElementById('val-fps').innerText = e.target.value;
+        sendControl({ t: 'set_fps', v: parseInt(e.target.value) });
+    };
+
+    qual.oninput = (e) => {
+        const v = parseInt(e.target.value);
+        let label = 'medium';
+        if (v < 30) label = 'low';
+        else if (v > 75) label = 'high';
+        document.getElementById('val-quality').innerText = label;
+        sendControl({ t: 'set_quality', v: v });
+    };
+}
+
+function setupDraggable(id) {
+    const el = document.getElementById(id);
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+    el.onmousedown = (e) => {
+        e = e || window.event;
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = () => {
+            document.onmouseup = null;
+            document.onmousemove = null;
+        };
+        document.onmousemove = (e) => {
+            e = e || window.event;
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            el.style.top = (el.offsetTop - pos2) + "px";
+            el.style.left = (el.offsetLeft - pos1) + "px";
+            el.style.bottom = 'auto'; // Break initial bottom-right anchor
+            el.style.right = 'auto';
+        };
+    };
+}

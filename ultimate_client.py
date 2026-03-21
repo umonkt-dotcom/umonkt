@@ -1,72 +1,65 @@
 import asyncio
-import json
-import io
+import orjson
 import os
 import sys
 import time
 import socket
 import struct
-import argparse
+import json
 import threading
-
 import mss
 import websockets
 from PIL import Image
 import psutil
-import orjson
+import getpass
+import platform
+import subprocess
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
-import sounddevice as sd
-import pyperclip
-import getpass
-
-# WebRTC Imports
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCIceCandidate
-from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 import av
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender
+from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
 # Global State
-selected_monitor = 1  # Standardize to Screen 1 default
+selected_monitor = 1  
 display_mode = "monitor"
-relay = MediaRelay()
-
-# --- Settings ---
-QUALITY = 50
-TARGET_FPS = 30
+target_fps = 20
+current_quality = 50
+audio_enabled = False
 BITRATE = 1500000
-SAMPLE_RATE = 48000
-CHANNELS = 2
-webcam_enabled = False
-clipboard_sync_enabled = True
-device_name = getpass.getuser()
-# selected_monitor = 1 # MSS monitor 1 is "All", 2 is first physical - Moved to Global State
+relay = MediaRelay()
 
 # --- Controllers ---
 input_lock = threading.Lock()
 mouse = MouseController()
 keyboard = KeyboardController()
-# Removed dx_camera = dxcam.create() - only one instance in main()
-KEY_MAP = {
-    "Enter": Key.enter, "Backspace": Key.backspace, "Tab": Key.tab,
-    "Escape": Key.esc, "Delete": Key.delete, "ArrowLeft": Key.left,
-    "ArrowRight": Key.right, "ArrowUp": Key.up, "ArrowDown": Key.down,
-    "Control": Key.ctrl, "Alt": Key.alt, "Shift": Key.shift,
-    " ": Key.space, "F1": Key.f1, "F2": Key.f2, "F3": Key.f3, "F4": Key.f4,
-    "F5": Key.f5, "F6": Key.f6, "F7": Key.f7, "F8": Key.f8,
-    "F9": Key.f9, "F10": Key.f10, "F11": Key.f11, "F12": Key.f12
-}
 
-send_lock = asyncio.Lock()
-last_clipboard = ""
+def parse_key(key_str):
+    if len(key_str) == 1: return key_str
+    return getattr(Key, key_str, key_str)
 
-async def safe_send(ws, data):
-    async with send_lock:
-        if isinstance(data, dict):
-            await ws.send(orjson.dumps(data).decode('utf-8'))
-        elif isinstance(data, str):
-            await ws.send(data)
-        else:
-            await ws.send(data) # bytes
+# -------------------------------------------------------
+# Telemetry
+# -------------------------------------------------------
+def get_detailed_specs():
+    try:
+        gpu = "Unknown"
+        try:
+            output = subprocess.check_output("wmic path win32_VideoController get name", shell=True).decode()
+            gpu = output.split('\n')[1].strip()
+        except: pass
+        
+        disk = psutil.disk_usage('C:/').percent
+        return {
+            "name": socket.gethostname(),
+            "user": getpass.getuser(),
+            "os": f"{platform.system()} {platform.release()}",
+            "cpu": f"{psutil.cpu_count()} Cores",
+            "ram": f"{round(psutil.virtual_memory().total / (1024**3), 1)}GB",
+            "gpu": gpu,
+            "disk": f"{disk}% used"
+        }
+    except: return {"name": "Unknown", "user": "Unknown"}
 
 # -------------------------------------------------------
 # WebRTC Tracks
@@ -75,41 +68,44 @@ class ScreenVideoTrack(VideoStreamTrack):
     def __init__(self, sct):
         super().__init__()
         self.sct = sct
+        self.last_frame_time = 0
 
     def update_settings(self, settings: dict):
-        global selected_monitor
+        global selected_monitor, target_fps, current_quality
         if "monitor" in settings:
             try:
                 val = int(settings["monitor"])
-                # SAFE MONITOR SELECTION: skip index 0 if it's the virtual combined screen
                 if val < 1 and len(self.sct.monitors) > 1: val = 1
                 selected_monitor = val
-                print(f"[DEBUG] SWAPPING TO MONITOR: {selected_monitor} (Total: {len(self.sct.monitors)-1})")
             except: pass
+        if "fps" in settings:
+            target_fps = max(5, min(60, int(settings["fps"])))
+        if "quality" in settings:
+            current_quality = max(10, min(100, int(settings["quality"])))
 
     async def recv(self):
-        pts, time_base = await self.next_timestamp()
+        now = time.time()
+        wait = (1.0 / target_fps) - (now - self.last_frame_time)
+        if wait > 0: await asyncio.sleep(wait)
+        self.last_frame_time = time.time()
 
+        pts, time_base = await self.next_timestamp()
+        
         try:
-            # PRO LEVEL MONITOR SELECTION
-            # sct.monitors[0] is often the "All Screens Combined" (virtual).
-            # We default to 1, and only fall back to 0 if only 1 monitor exists total.
             mon_idx = selected_monitor
             if mon_idx >= len(self.sct.monitors):
                 mon_idx = min(1, len(self.sct.monitors)-1)
-
+            
             mon = self.sct.monitors[mon_idx]
             sct_img = self.sct.grab(mon)
             img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-
-            # LAG FIX: Downscale if too large (AnyDesk style)
+            
             w, h = img.size
-            if w > 960:
-                new_h = int(h * (960 / w))
-                img = img.resize((960, new_h), Image.Resampling.BILINEAR)
-        except Exception as e:
-            print(f"[ERROR] Capture failed: {e}. Falling back to black frame.")
-            # Black frame fallback to prevent crash
+            limit = 960 if current_quality < 60 else 1280
+            if w > limit:
+                new_h = int(h * (limit / w))
+                img = img.resize((limit, new_h), Image.Resampling.BILINEAR)
+        except:
             img = Image.new("RGB", (960, 540), (0, 0, 0))
 
         frame = av.VideoFrame.from_image(img)
@@ -118,58 +114,21 @@ class ScreenVideoTrack(VideoStreamTrack):
         return frame
 
 class SystemAudioTrack(AudioStreamTrack):
-    def __init__(self):
-        super().__init__()
-        self.stream = sd.InputStream(samplerate=SAMPLE_RATE, channels=CHANNELS, dtype='int16')
-        self.stream.start()
-
     async def recv(self):
         pts, time_base = await self.next_timestamp()
-        data, _ = self.stream.read(960)
-        frame = av.AudioFrame.from_ndarray(data, format='s16', layout='stereo')
+        # Create silent frame for now, real audio link requires loopback setup
+        duration = 1 / 50 
+        samples = int(48000 * duration)
+        frame = av.AudioFrame(format='s16', layout='stereo', samples=samples)
+        for plane in frame.planes:
+            plane.update(b'\x00' * plane.buffer_size)
         frame.pts = pts
         frame.time_base = time_base
-        frame.sample_rate = SAMPLE_RATE
-# Removed WebcamVideoTrack for stability (Numpy dependency)
-
+        return frame
 
 # -------------------------------------------------------
-# Elite Features: Clipboard & Processes
+# Messaging & WebRTC Core
 # -------------------------------------------------------
-async def monitor_clipboard(ws):
-    global last_clipboard
-    while True:
-        try:
-            if clipboard_sync_enabled:
-                current = await asyncio.to_thread(pyperclip.paste)
-                if current and current != last_clipboard:
-                    last_clipboard = current
-                    header = struct.pack('BB', 8, 0)
-                    await safe_send(ws, header + current.encode('utf-8'))
-        except: pass
-        await asyncio.sleep(1)
-
-async def send_process_list(ws):
-    try:
-        procs = []
-        # Update CPU percents first
-        for p in psutil.process_iter():
-            try: p.cpu_percent()
-            except: pass
-        await asyncio.sleep(0.1)
-        for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
-            try:
-                procs.append({
-                    "pid": p.info['pid'],
-                    "name": p.info['name'],
-                    "cpu": p.info['cpu_percent'],
-                    "ram": p.info['memory_info'].rss if p.info['memory_info'] else 0
-                })
-            except: continue
-        header = struct.pack('BB', 7, 0)
-        await safe_send(ws, header + json.dumps(procs).encode('utf-8'))
-    except: pass
-
 async def send_process_list_dc(dc):
     try:
         procs = []
@@ -179,232 +138,107 @@ async def send_process_list_dc(dc):
                     "pid": p.info['pid'],
                     "name": p.info['name'],
                     "cpu": p.info['cpu_percent'],
-                    "ram": p.info['memory_info'].rss / (1024 * 1024)
+                    "ram": round(p.info['memory_info'].rss / (1024 * 1024), 1)
                 })
             except: continue
         dc.send(orjson.dumps({"t": "process_list", "data": procs}))
     except: pass
 
-# -------------------------------------------------------
-# JPEG Fallback Stream
-# -------------------------------------------------------
-async def stream_screen_jpeg(ws, camera):
-    global QUALITY, TARGET_FPS
-    while True:
-        try:
-            start = time.perf_counter()
-            frame_nb = await asyncio.to_thread(camera.grab)
-            if frame_nb is not None:
-                img = Image.fromarray(frame_nb)
-                buf = io.BytesIO()
-                img.save(buf, format="JPEG", quality=QUALITY)
-                frame_bytes = buf.getvalue()
-                header = struct.pack('BB', 1, 0)
-                await safe_send(ws, header + frame_bytes)
+async def start_session(ws, sct):
+    pc = RTCPeerConnection()
+    video_track = ScreenVideoTrack(sct)
 
-            # Basic Stats
-            info = {"cpu": psutil.cpu_percent(), "ram": psutil.virtual_memory().percent}
-            await safe_send(ws, struct.pack('BB', 5, 0) + json.dumps(info).encode())
+    @pc.on_datachannel
+    def on_datachannel(dc):
+        @dc.on_message
+        def on_message(m):
+            try:
+                event = orjson.loads(m)
+                if event.get("t") == "get_processes":
+                    asyncio.create_task(send_process_list_dc(dc))
+                elif event.get("t") == "select_monitor":
+                    video_track.update_settings({"monitor": event.get("index", 1)})
+                elif event.get("t") == "set_fps":
+                    video_track.update_settings({"fps": event.get("v", 20)})
+                elif event.get("t") == "set_quality":
+                    video_track.update_settings({"quality": event.get("v", 50)})
+                elif event.get("t") == "toggle_audio":
+                    global audio_enabled
+                    audio_enabled = event.get("v", False)
+                elif event.get("t") == "toggle_webcam":
+                    pass 
 
-            elapsed = time.perf_counter() - start
-            await asyncio.sleep(max(0, (1.0 / 10) - elapsed)) # Lower FPS for JPEG fallback
-        except: await asyncio.sleep(1)
-
-# -------------------------------------------------------
-# Messaging & WebRTC
-# -------------------------------------------------------
-def handle_event(event):
-    global last_clipboard
-    with input_lock:
-        try:
-            t = event.get("t")
-            if t == "mm": # Mouse Move
-                mouse.position = (event["x"], event["y"])
-            elif t == "mc": # Mouse Click
-                btn = Button.left if event["b"] == 0 else Button.right
-                if event["s"]: mouse.press(btn)
-                else: mouse.release(btn)
-            elif t == "scroll": mouse.scroll(0, -event.get("dy", 1))
-            elif t == "kd": # Key Down
-                key = event["k"]
-                if len(key) == 1: keyboard.press(key)
-                else:
-                    k_attr = getattr(Key, key.lower(), None)
-                    if k_attr: keyboard.press(k_attr)
-            elif t == "ku": # Key Up
-                key = event["k"]
-                if len(key) == 1: keyboard.release(key)
-                else:
-                    k_attr = getattr(Key, key.lower(), None)
-                    if k_attr: keyboard.release(k_attr)
-            elif t == "clipboard_sync":
-                last_clipboard = event["d"]
-                pyperclip.copy(last_clipboard)
-            elif t == "kill_process":
-                p = psutil.Process(event["pid"])
-                p.terminate()
-            elif t == "select_monitor":
-                global selected_monitor
-                selected_monitor = int(event.get("index", 1))
-        except: pass
-
-async def manage_webrtc(ws, camera):
-    pc = None
-    async for raw in ws:
-        try:
-            msg = orjson.loads(raw)
-            if msg.get("t") == "rtc_offer":
-                if pc: await pc.close()
-                pc = RTCPeerConnection(configuration={"iceServers": [
-                    {"urls": "stun:stun.l.google.com:19302"},
-                    {"urls": "stun:stun1.l.google.com:19302"},
-                    {"urls": "stun:stun2.l.google.com:19302"},
-                    {"urls": "stun:stun.cloudflare.com:3478"},
-                    {"urls": "stun:stun.services.mozilla.com:3478"},
-                    {
-                        "urls": [
-                            "turn:openrelay.metered.ca:80",
-                            "turn:openrelay.metered.ca:443",
-                            "turn:openrelay.metered.ca:443?transport=tcp"
-                        ],
-                        "username": "openrelayproject",
-                        "credential": "openrelayproject"
-                    }
-                ]})
-
-
-                # Force H264 for better compression/lag reduction
-                # Pro-Level Fix: Ultra-Fast Preset + Zero Latency Tune
-                video_track = ScreenVideoTrack(camera)
-                transceiver = pc.addTransceiver(video_track, direction="sendonly")
-                capabilities = RTCRtpSender.getCapabilities("video")
-                h264_codecs = [c for c in capabilities.codecs if c.name == "H264"]
-                if h264_codecs:
-                    transceiver.setCodecPreferences(h264_codecs)
-
-                # STREAM OPTIMIZATION (AnyDesk Level Control)
-                # capabilities = RTCRtpSender.getCapabilities("video") # Already defined above
-                params = transceiver.sender.getParameters()
-
-                # Force target bitrate and frame rate
-                if not params.encodings:
-                    from aiortc import RTCRtpEncodingParameters
-                    params.encodings = [RTCRtpEncodingParameters(maxBitrate=800000, maxFramerate=20)]
-                else:
-                    params.encodings[0].maxBitrate = 800000  # 800kbps max
-                    params.encodings[0].maxFramerate = 20    # 20 FPS
-
-                await transceiver.sender.setParameters(params)
-
-                # Add tracks manually now
-                # pc.addTrack(ScreenVideoTrack(camera)) # Replaced by transceiver.addTransceiver(video_track, ...)
-                pc.addTrack(SystemAudioTrack())
-
-                # Set encoding parameters (Bitrate/FPS) - This block is now largely redundant due to the explicit transceiver setup above
-                for sender in pc.getSenders():
-                    if sender.track and sender.track.kind == "video":
-                        # This part is now handled by the transceiver.sender.setParameters(params) above
-                        # params = sender.getParameters()
-                        # if not params.encodings:
-                        #     from aiortc import RTCRtpEncodingParameters
-                        #     params.encodings = [RTCRtpEncodingParameters(maxBitrate=BITRATE, maxFramerate=TARGET_FPS)]
-                        # else:
-                        #     params.encodings[0].maxBitrate = BITRATE
-                        #     params.encodings[0].maxFramerate = TARGET_FPS
-                        # try: await sender.setParameters(params)
-                        # except: pass
-                        pass # Handled by explicit transceiver setup
-
-                # Setup Dummy Webcam (Disabled for stability)
-                # webcam_track = WebcamVideoTrack()
-                # webcam_sender = pc.addTrack(webcam_track)
-                # await webcam_sender.replaceTrack(None)
-
-
-                @pc.on("datachannel")
-                def on_dc(dc):
-                    @dc.on("open")
-                    async def on_open():
-                        # Start P2P Stats Loop
-                        while dc.readyState == "open":
-                            try:
-                                stats = {
-                                    "cpu": psutil.cpu_percent(),
-                                    "ram": psutil.virtual_memory().percent
-                                }
-                                dc.send(orjson.dumps({"t": "stats", "data": stats}).decode())
-                            except: break
-                            await asyncio.sleep(1)
-
-                    @dc.on("message")
-                    async def on_msg(m):
-                        try:
-                            event = orjson.loads(m)
-                            if event.get("t") == "get_processes":
-                                asyncio.create_task(send_process_list_dc(dc))
-                            elif event.get("t") == "select_monitor":
-                                video_track.update_settings({"monitor": event.get("index", 1)})
-                            elif event.get("t") == "toggle_webcam":
-                                pass # Webcam disabled for stability
-
-
-                            else:
-                                handle_event(event)
+                if input_lock.locked(): return
+                with input_lock:
+                    if event["t"] == "mm":
+                        mon = sct.monitors[selected_monitor]
+                        rx, ry = event["x"] / event["w"], event["y"] / event["h"]
+                        mouse.position = (mon["left"] + rx * mon["width"], mon["top"] + ry * mon["height"])
+                    elif event["t"] == "mc":
+                        btn = Button.left if event["b"] == "left" else Button.right
+                        if event["p"]: mouse.press(btn)
+                        else: mouse.release(btn)
+                    elif event["t"] == "kd":
+                        try: keyboard.press(parse_key(event["k"]))
                         except: pass
+                    elif event["t"] == "ku":
+                        try: keyboard.release(parse_key(event["k"]))
+                        except: pass
+            except: pass
 
-                await pc.setRemoteDescription(RTCSessionDescription(sdp=msg["sdp"], type=msg["type"]))
-                answer = await pc.createAnswer()
-                await pc.setLocalDescription(answer)
-                await safe_send(ws, {"t": "rtc_answer", "sdp": pc.localDescription.sdp, "type": pc.localDescription.type})
-            elif msg.get("t") == "rtc_ice" and pc:
-                from aiortc import RTCIceCandidate
-                c = msg["candidate"]
-                if c: await pc.addIceCandidate(RTCIceCandidate(
-                    component=c.get("component", 1), foundation=c.get("foundation", ""),
-                    ip=c.get("address", ""), port=c.get("port", 0), priority=c.get("priority", 0),
-                    protocol=c.get("protocol", "udp"), type=c.get("type", "host"),
-                    sdpMid=c.get("sdpMid"), sdpMLineIndex=c.get("sdpMLineIndex"),
-                ))
-            elif msg.get("t") == "get_processes":
-                await send_process_list(ws)
-            else:
-                handle_event(msg)
-        except: pass
+    # Video Transceiver
+    transceiver = pc.addTransceiver(video_track, direction="sendonly")
+    params = transceiver.sender.getParameters()
+    if not params.encodings:
+        from aiortc import RTCRtpEncodingParameters
+        params.encodings = [RTCRtpEncodingParameters(maxBitrate=BITRATE, maxFramerate=60)]
+    await transceiver.sender.setParameters(params)
 
-async def main(server_host):
-    uri = f"wss://{server_host}/ws" if "railway.app" in server_host else f"ws://{server_host}:8000/ws"
-    import ssl
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    ssl_context.check_hostname, ssl_context.verify_mode = False, ssl.CERT_NONE
+    # Audio Track
+    pc.addTrack(SystemAudioTrack())
 
+    # Handshake Handling
+    async def listen_signaling():
+        async for m in ws:
+            try:
+                event = orjson.loads(m)
+                if event.get("t") == "rtc_offer":
+                    await pc.setRemoteDescription(RTCSessionDescription(sdp=event["sdp"], type=event["type"]))
+                    ans = await pc.createAnswer()
+                    await pc.setLocalDescription(ans)
+                    await ws.send(orjson.dumps({"t": "rtc_answer", "sdp": pc.localDescription.sdp, "type": pc.localDescription.type}).decode())
+                elif event.get("t") == "rtc_ice":
+                    from aiortc import RTCIceCandidate
+                    cand = event["candidate"]["candidate"]
+                    sdpMid = event["candidate"]["sdpMid"]
+                    sdpMLineIndex = event["candidate"]["sdpMLineIndex"]
+                    await pc.addIceCandidate(RTCIceCandidate(candidate=cand, sdpMid=sdpMid, sdpMLineIndex=sdpMLineIndex))
+            except Exception as e:
+                print(f"Signaling error: {e}")
+
+    await listen_signaling()
+
+# -------------------------------------------------------
+# Bootstrap
+# -------------------------------------------------------
+async def main_loop():
+    server = "web-production-d6db5.up.railway.app"
+    uri = f"wss://{server}/ws"
+    
     while True:
         try:
-            async with websockets.connect(uri, ssl=ssl_context if "wss" in uri else None) as ws:
-                print("CONNECTED TO SERVER")
-                import platform
-                specs = {
-                    "name": device_name,
-                    "hostname": socket.gethostname(),
-                    "platform": platform.system(),
-                    "release": platform.release(),
-                    "cpu": f"{psutil.cpu_count()} Cores",
-                    "ram": f"{round(psutil.virtual_memory().total / (1024**3))}GB",
-                    "monitors": [{"index": i, "w": m["width"], "h": m["height"]} for i, m in enumerate(mss.mss().monitors)]
-                }
-                await ws.send(orjson.dumps({"type": "client_auth", "id": socket.gethostname(), "specs": specs}).decode('utf-8'))
-
+            async with websockets.connect(uri) as ws:
+                print("CONNECTED TO PRO SERVER")
+                client_id = socket.gethostname()
+                specs = get_detailed_specs()
+                # Pass monitors in specs for dashboard selection
                 with mss.mss() as sct:
-                    try:
-                        await asyncio.gather(manage_webrtc(ws, sct), monitor_clipboard(ws))
-                    except: pass
-
-        except: await asyncio.sleep(5)
+                    specs["monitors"] = [{"width": m["width"], "height": m["height"]} for m in sct.monitors]
+                    await ws.send(orjson.dumps({"type": "client_auth", "id": client_id, "specs": specs}).decode())
+                    await start_session(ws, sct)
+        except Exception as e:
+            print(f"Connection failed: {e}. Retrying...")
+            await asyncio.sleep(5)
 
 if __name__ == "__main__":
-    import getpass
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--server", default="web-production-d6db5.up.railway.app")
-    parser.add_argument("--name", default=getpass.getuser())
-    args = parser.parse_args()
-    device_name = args.name
-    asyncio.run(main(args.server))
+    asyncio.run(main_loop())

@@ -116,9 +116,39 @@
                         </div>
                     </div>
                     
-                    <button class="btn" style="background:#200; border-color:#500; color:#F55; margin-top:auto;" onclick="navigateTo('dashboard')">
+                    <button class="btn btn-danger" onclick="disconnectSession()">
                         <i class="fas fa-times"></i> Terminate Session
                     </button>
+
+                    <div class="control-section" style="margin-top: 20px;">
+                        <h3 class="section-title">Stream Optimization</h3>
+                        <div class="control-group">
+                            <label>Max FPS: <span id="val-fps">20</span></label>
+                            <input type="range" id="slider-fps" min="5" max="60" value="20" class="slider">
+                        </div>
+                        <div class="control-group">
+                            <label>Quality: <span id="val-quality">medium</span></label>
+                            <input type="range" id="slider-quality" min="10" max="100" value="50" class="slider">
+                        </div>
+                        <div class="control-group">
+                            <label class="switch-label">
+                                <span>High Fidelity Audio</span>
+                                <input type="checkbox" id="audio-toggle">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-section" style="margin-top: 20px;">
+                        <h3 class="section-title">System Specs</h3>
+                        <div id="detailed-specs" class="specs-list">
+                            <div class="spec-item">USER: <span id="spec-user">--</span></div>
+                            <div class="spec-item">OS: <span id="spec-os">--</span></div>
+                            <div class="spec-item">CPU: <span id="spec-cpu">--</span></div>
+                            <div class="spec-item">RAM: <span id="spec-ram">--</span></div>
+                            <div class="spec-item">DISK: <span id="spec-disk">--</span></div>
+                            <div class="spec-item">GPU: <span id="spec-gpu">--</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -127,6 +157,12 @@
                 <div id="footer-stats">SIGNAL: STANDBY</div>
             </footer>
         </div>
+    </div>
+
+    <!-- Draggable Webcam Overlay -->
+    <div id="webcam-overlay" class="draggable-webcam hidden">
+        <video id="webcam-video" autoplay playsinline muted></video>
+        <div class="drag-handle"><i class="fas fa-grip-lines"></i></div>
     </div>
 
     <!-- Modals -->
