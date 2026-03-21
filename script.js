@@ -3,8 +3,9 @@ let pc = null;
 let dataChannel = null;
 let selectedDeviceId = null;
 let activeView = 'dashboard';
-let mouseEnabled = false;
-let keyboardEnabled = false;
+let mouseEnabled = true;
+let keyboardEnabled = true;
+let allDevices = [];
 
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -91,9 +92,9 @@ function toggleModal(id, show) {
 async function fetchDevices() {
     try {
         const res = await fetch('/api/devices');
-        const devices = await res.json();
-        renderDeviceGrid(devices);
-        renderActiveSidebar(devices);
+        allDevices = await res.json();
+        renderDeviceGrid(allDevices);
+        renderActiveSidebar(allDevices);
     } catch (e) { console.error("Fetch devices failed", e); }
 }
 
@@ -143,6 +144,14 @@ function updateDetailedSpecs(device) {
 async function selectDevice(deviceId) {
     selectedDeviceId = deviceId;
     document.getElementById('active-host-name').innerText = `SESSION: ${deviceId}`;
+    
+    // Instant DOM Spec & Display Prep from memory
+    const target = allDevices.find(d => d.hostname === deviceId);
+    if (target && target.specs) {
+        updateDetailedSpecs(target);
+        if (target.specs.monitors) populateDisplaySelect(target.specs.monitors);
+    }
+    
     navigateTo('remote');
     startWebRTC(deviceId);
 }
