@@ -170,10 +170,14 @@
         <div class="modal-card">
             <h2>Add New Remote Node</h2>
             <p style="font-size:13px; color:var(--text-muted);">Execute this command on the target system (Admin PowerShell):</p>
-            <code>powershell -ExecutionPolicy Bypass -Command "iwr -useb 'https://web-production-d6db5.up.railway.app/api/script' | iex"</code>
-            <button class="btn" style="margin-top:20px;" onclick="toggleModal('modal-add-user', false)">Close</button>
+            <code id="install-cmd">powershell -ExecutionPolicy Bypass -Command "iwr -useb 'https://web-production-d6db5.up.railway.app/api/script' | iex"</code>
+            <div style="display:flex; gap:15px; margin-top:20px;">
+                <button class="btn" onclick="navigator.clipboard.writeText(document.getElementById('install-cmd').innerText); this.innerHTML='<i class=\'fas fa-check\'></i> Copied!'; setTimeout(()=>this.innerHTML='<i class=\'fas fa-copy\'></i> Copy Command', 2000)"><i class="fas fa-copy"></i> Copy Command</button>
+                <button class="btn btn-danger" onclick="toggleModal('modal-add-user', false)">Close</button>
+            </div>
         </div>
     </div>
+
 
     <script src="/script.js"></script>
 </body>

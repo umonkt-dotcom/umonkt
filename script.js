@@ -56,6 +56,7 @@ function handleMessage(msg) {
         document.getElementById('spec-ram').innerText = s.ram || '--';
         document.getElementById('spec-disk').innerText = s.disk || '--';
         document.getElementById('spec-gpu').innerText = s.gpu || '--';
+        if (s.monitors) populateDisplaySelect(s.monitors);
     }
 }
 
