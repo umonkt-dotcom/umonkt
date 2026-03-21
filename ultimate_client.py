@@ -181,7 +181,6 @@ class ScreenVideoTrack(VideoStreamTrack):
         if "monitor" in settings:
             try:
                 val = int(settings["monitor"])
-                if val < 1 and len(self.sct.monitors) > 1: val = 1
                 selected_monitor = val
             except: pass
         if "fps" in settings:

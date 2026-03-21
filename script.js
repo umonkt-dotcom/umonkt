@@ -244,16 +244,15 @@ function sendControl(data) {
 // Monitor Switching
 function populateDisplaySelect(monitors) {
     const select = document.getElementById('display-select');
-    // If multiple monitors exist, we start at Index 1 (Screen 1) as default
-    // Index 0 in MSS is usually "All Screens Combined"
-    select.innerHTML = monitors.length > 1 ? '<option value="0">All Screens (Combined)</option>' : '';
+    // In mss, index 0 is the aggregate of all screens. So length 2 means only 1 physical screen.
+    select.innerHTML = monitors.length > 2 ? '<option value="0">All Screens (Combined)</option>' : '';
     
     monitors.forEach((m, idx) => {
-        if (idx === 0 && monitors.length > 1) return; // Skip "All" for individual list if more than 1
+        if (idx === 0) return; // Always skip the 0th mss output for the individual physical screens 
         const opt = document.createElement('option');
         opt.value = idx;
         opt.innerText = `Screen ${idx} (${m.width}x${m.height})`;
-        if (idx === 1 || (idx === 0 && monitors.length === 1)) opt.selected = true;
+        if (idx === 1) opt.selected = true;
         select.appendChild(opt);
     });
 
