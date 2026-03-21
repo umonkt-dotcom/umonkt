@@ -304,26 +304,23 @@ function updateDeviceGrid(devices) {
         const isOffline = dev.status === 'Offline';
         const card = document.createElement('div');
         card.className = `device-card ${isOffline ? 'offline' : ''} ${selectedDeviceId === dev.hostname ? 'selected' : ''}`;
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center">
+                <div style="font-weight:700; color:white">${dev.specs?.name || "Initializing..."}</div>
+                <div class="dot ${dev.online ? 'green' : 'gray'}"></div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted)">${dev.id}</div>
+            <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap">
+                <div class="spec-mini"><i class="fas fa-microchip"></i> ${dev.specs?.cpu || '--'}</div>
+                <div class="spec-mini"><i class="fas fa-memory"></i> ${dev.specs?.ram || '--'}</div>
+                <div class="spec-mini"><i class="fas fa-desktop"></i> ${dev.specs?.monitors?.length || 1} Screens</div>
+            </div>
+        `;
         card.onclick = () => {
             if (isOffline) return;
             selectedDeviceId = dev.hostname;
             selectDevice(dev.hostname);
         };
-        const statusColor = dev.status === 'Active' ? '#39FF14' : (dev.status === 'Inactive' ? '#FFA500' : '#555');
-        card.innerHTML = `
-            <div class="card-top">
-                <i class="fas fa-power-off" style="color: ${statusColor}"></i>
-                <div class="card-header-text">
-                    <div class="card-hostname">${dev.hostname.toUpperCase()}</div>
-                    <div class="card-subtitle">${dev.status}</div>
-                </div>
-            </div>
-            <div class="card-stats">
-                <span class="stat-label">User</span><span class="stat-value">${dev.user}</span>
-                <span class="stat-label">RAM</span><span class="stat-value">${dev.ram}%</span>
-                <span class="stat-label">Disk</span><span class="stat-value">${dev.disk}%</span>
-            </div>
-        `;
         grid.appendChild(card);
     });
 }
@@ -344,22 +341,32 @@ function setupNavigation() {
     });
 }
 
-function navigateTo(view) {
-    if (activeView === view) return;
-    activeView = view;
+function navigateTo(viewName) {
+    activeView = viewName;
+    document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
+    const target = document.getElementById(`view-${viewName}`);
+    if (target) target.classList.add('active');
     
-    // Smooth transition using classes
-    document.querySelectorAll('.page-view').forEach(p => {
-        p.classList.toggle('active', p.id === `view-${view}`);
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navItem = document.querySelector(`.nav-item[data-view="${viewName}"]`);
+    if (navItem) navItem.classList.add('active');
+
+    // Show/Hide Right Sidebar for Remote sessions
+    const rightPanel = document.getElementById('right-control-panel');
+    if (viewName === 'remote') {
+        rightPanel.classList.remove('hidden');
+    } else {
+        rightPanel.classList.add('hidden');
+    }
+
+    if (viewName === 'dashboard') disconnectSession();
+    if (viewName === 'tools') fetchProcesses();
+}
+
+function setupNavigation() {
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', () => navigateTo(btn.getAttribute('data-view')));
     });
-    
-    document.querySelectorAll('.nav-item').forEach(i => {
-        i.classList.toggle('active', i.getAttribute('data-view') === view);
-    });
-    
-    // Auto-disconnect/connect logic
-    if (view === 'dashboard') disconnectSession();
-    if (view === 'tools') fetchProcesses();
 }
 
 function disconnectSession() {

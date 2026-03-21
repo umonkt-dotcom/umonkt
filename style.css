@@ -147,6 +147,31 @@ body {
     font-size: 13px;
 }
 
+/* Pro-Grade Styles - Fast AF Edition */
+.view-session-wrapper { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 95px); }
+.right-sidebar { width: 300px; background: var(--sidebar-bg); border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; z-index: 10; animation: slideInRight 0.3s ease; }
+.panel-section { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 15px; }
+.control-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; }
+.control-item:last-child { margin-bottom: 0; }
+.pro-select { width: 100%; background: #000; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; font-size: 13px; outline: none; margin-top: 10px; cursor: pointer; }
+.pro-select:hover { border-color: var(--pro-green); }
+.stats-box { font-family: monospace; font-size: 12px; color: var(--text-muted); margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+.stats-box span { color: var(--pro-green); }
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.table-scroll { flex: 1; background: #080808; border: 1px solid var(--border); border-radius: 8px; overflow: auto; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+.modal-card { background: var(--card-bg); padding: 35px; border-radius: 12px; width: 600px; border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+.modal-card code { display: block; background: #000; padding: 20px; border-radius: 8px; border: 1px solid var(--border); color: var(--pro-green); font-family: monospace; word-break: break-all; margin: 20px 0; }
+
+/* Fix Video Container */
+.screens-grid { flex: 1; display: flex; justify-content: center; align-items: center; background: #000; overflow: hidden; position: relative; width: 100%; }
+#remote-video { max-width: 100%; max-height: 100%; object-fit: contain; }
+
 /* Performance Optimizations */
 .hidden { display: none !important; }
 * { box-sizing: border-box; }
