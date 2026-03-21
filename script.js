@@ -155,9 +155,8 @@ async function startWebRTC(deviceId) {
     });
 
     pc.onicecandidate = (e) => {
-        // Wait for ICE Gathering to complete fully, then dispatch the monolithic Master SDP
-        if (!e.candidate) {
-            socket.send(JSON.stringify({ t: 'rtc_offer', sdp: pc.localDescription.sdp, type: pc.localDescription.type }));
+        if (e.candidate) {
+            socket.send(JSON.stringify({ t: 'rtc_ice', candidate: e.candidate }));
         }
     };
 
@@ -181,6 +180,7 @@ async function startWebRTC(deviceId) {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     socket.send(JSON.stringify({ t: 'select_device', id: deviceId }));
+    socket.send(JSON.stringify({ t: 'rtc_offer', sdp: pc.localDescription.sdp, type: pc.localDescription.type }));
     
     setupInputListeners();
 }
@@ -246,8 +246,7 @@ function sendControl(data) {
 // Monitor Switching
 function populateDisplaySelect(monitors) {
     const select = document.getElementById('display-select');
-    // In mss, index 0 is the aggregate of all screens. So length 2 means only 1 physical screen.
-    select.innerHTML = monitors.length > 2 ? '<option value="0">All Screens (Combined)</option>' : '';
+    select.innerHTML = '<option value="0">All Screens (Combined)</option>';
     
     monitors.forEach((m, idx) => {
         if (idx === 0) return; // Always skip the 0th mss output for the individual physical screens 

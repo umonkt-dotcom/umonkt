@@ -329,11 +329,17 @@ async def start_session(ws, sct):
                     await pc.setLocalDescription(ans)
                     await ws.send(orjson.dumps({"t": "rtc_answer", "sdp": pc.localDescription.sdp, "type": pc.localDescription.type}).decode())
                 elif event.get("t") == "rtc_ice":
-                    from aiortc import RTCIceCandidate
-                    cand = event["candidate"]["candidate"]
-                    sdpMid = event["candidate"]["sdpMid"]
-                    sdpMLineIndex = event["candidate"]["sdpMLineIndex"]
-                    await pc.addIceCandidate(RTCIceCandidate(candidate=cand, sdpMid=sdpMid, sdpMLineIndex=sdpMLineIndex))
+                    try:
+                        from aiortc.sdp import candidate_from_sdp
+                        cand_str = event["candidate"]["candidate"]
+                        if cand_str.startswith("candidate:"):
+                            cand_str = cand_str[10:]
+                        cand_obj = candidate_from_sdp(cand_str)
+                        cand_obj.sdpMid = event["candidate"]["sdpMid"]
+                        cand_obj.sdpMLineIndex = event["candidate"]["sdpMLineIndex"]
+                        await pc.addIceCandidate(cand_obj)
+                    except Exception as e:
+                        pass
             except Exception as e:
                 print(f"Signaling error: {e}")
 
