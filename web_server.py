@@ -142,43 +142,34 @@ $dir = "$env:APPDATA\\MRL-Service"
 if (!(Test-Path $dir)) {{ New-Item -ItemType Directory -Path $dir -Force | Out-Null; (Get-Item $dir).Attributes = 'Hidden' }}
 
 $client_path = "$dir\\mrl_agent.exe"
-$tmp_path = "$env:TEMP\\mrl_agent_new.exe"
+$tmp_path = "$env:TEMP\\mrl_agent_tmp.exe"
+$url = "{protocol}://{host}/api/client_exe"
 
-# Step 1: Download with high timeout and retry logic
-$url = "https://raw.githubusercontent.com/umonkt-dotcom/umonkt/main/mrl_agent.exe"
-Write-Host "Downloading MRL Secure Agent Payload (93MB)..." -ForegroundColor Cyan
-if (Test-Path $tmp_path) {{ Remove-Item $tmp_path -Force -ErrorAction SilentlyContinue }}
+Write-Host "Downloading MRL Secure Agent Payload (53MB)..." -ForegroundColor Cyan
+Invoke-WebRequest -Uri $url -OutFile $tmp_path -TimeoutSec 600
 
-try {{
-    Invoke-WebRequest -Uri $url -OutFile $tmp_path -TimeoutSec 600 -ErrorAction Stop
-}} catch {{
-    Write-Host "Download Failed: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "Checking if partial file exists..."
-}}
-
-# Verify download is complete (must be at least 90MB)
+# Verify download is complete (must be at least 50MB)
 if (Test-Path $tmp_path) {{
     $size = (Get-Item $tmp_path).Length
-    if ($size -lt 90MB) {{
+    if ($size -lt 50MB) {{
         Write-Host "CRITICAL: Download incomplete ($($size / 1MB) MB). Connection timed out." -ForegroundColor Red
-        Write-Host "Retrying in 5 seconds..."
-        Start-Sleep -Seconds 5
-        Invoke-WebRequest -Uri $url -OutFile $tmp_path -TimeoutSec 900 -ErrorAction Stop
+        exit 1
     }}
 }} else {{
-    Write-Host "CRITICAL: Download failed entirely. Please check your internet connection." -ForegroundColor Red
+    Write-Host "CRITICAL: Download failed entirely." -ForegroundColor Red
     exit 1
 }}
 
-# Step 2: Now kill old agent and wait for it to fully exit
-Stop-Process -Name mrl_agent -Force -ErrorAction SilentlyContinue
-$deadline = (Get-Date).AddSeconds(10)
+# Step 2: Kill existing agent
+$deadline = (Get-Date).AddSeconds(15)
+Stop-Process -Name mrl_agent -ErrorAction SilentlyContinue
 while ((Get-Process -Name mrl_agent -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {{
     Start-Sleep -Milliseconds 200
 }}
 
 # Step 3: Replace old exe with the newly downloaded one
 Write-Host "Installing updates..." -ForegroundColor Yellow
+$success = $false
 for ($i = 0; $i -lt 15; $i++) {{
     try {{
         if (Test-Path $client_path) {{ Remove-Item $client_path -Force -ErrorAction Stop }}
