@@ -173,6 +173,14 @@ async function startWebRTC(deviceId) {
         video.play().catch(err => console.error("Video Play Error:", err));
     };
 
+    pc.oniceconnectionstatechange = () => {
+        if (pc && (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed')) {
+            console.log("Device Connection Lost.");
+            disconnectSession();
+            navigateTo('dashboard');
+        }
+    };
+
     // Data Channel for Controls
     dataChannel = pc.createDataChannel('mrl-control');
     dataChannel.onopen = () => console.log("P2P Control Active");
@@ -205,6 +213,18 @@ function disconnectSession() {
     dataChannel = null;
     document.getElementById('remote-video').srcObject = null;
     document.getElementById('active-host-name').innerText = 'ROOT CONSOLE';
+
+    // Aggressively scrub all telemetry and spec ghosts
+    document.getElementById('stat-latency').innerText = '-- ms';
+    document.getElementById('stat-bitrate').innerText = '-- kbps';
+    document.getElementById('stat-fps').innerText = '--';
+    document.getElementById('spec-os').innerText = '...';
+    document.getElementById('spec-cpu').innerText = '...';
+    document.getElementById('spec-ram').innerText = '...';
+    document.getElementById('spec-disk').innerText = '...';
+    document.getElementById('spec-gpu').innerText = '...';
+    document.getElementById('procs-body').innerHTML = '';
+    document.getElementById('display-select').innerHTML = '<option value="0">All Screens (Combined)</option>';
 }
 
 // Input Handling
