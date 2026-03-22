@@ -344,6 +344,8 @@ function updateStats(data) {
     document.getElementById('stat-latency').innerText = `${data.latency || '--'} ms`;
     document.getElementById('stat-bitrate').innerText = `${data.bitrate || '--'} kbps`;
     document.getElementById('stat-fps').innerText = data.fps || '--';
+    const footer = document.getElementById('footer-stats');
+    if (footer) footer.innerText = `SIGNAL: ACTIVE | ${data.latency || '--'}ms`;
 }
 
 // Process Manager
