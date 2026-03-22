@@ -228,8 +228,9 @@ async function startWebRTC(deviceId) {
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
+    console.log("[SIGNAL] Sending Offer to", deviceId);
     socket.send(JSON.stringify({ t: 'select_device', id: deviceId }));
-    socket.send(JSON.stringify({ t: 'rtc_offer', sdp: pc.localDescription.sdp, type: pc.localDescription.type }));
+    socket.send(JSON.stringify({ t: 'rtc_offer', id: deviceId, sdp: pc.localDescription.sdp, type: pc.localDescription.type }));
     
     setupInputListeners();
 }

