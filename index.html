@@ -52,6 +52,7 @@
                     <div id="view-remote" class="page-view">
                         <div class="screens-grid">
                             <video id="remote-video" autoplay playsinline muted></video>
+                            <canvas id="ws-video" class="hidden" style="width: 100%; height: 100%; object-fit: contain;"></canvas>
                             <video id="webcam-video" autoplay playsinline muted class="hidden"></video>
                         </div>
                     </div>
@@ -127,6 +128,9 @@
                     
                     <button class="btn btn-danger" onclick="disconnectSession()">
                         <i class="fas fa-times"></i> Terminate Session
+                    </button>
+                    <button class="btn" style="margin-top: 10px; background: var(--bg-card);" onclick="forceWebSocketRelay()">
+                        <i class="fas fa-network-wired"></i> Force WS Relay
                     </button>
 
                     <div class="control-section" style="margin-top: 20px;">

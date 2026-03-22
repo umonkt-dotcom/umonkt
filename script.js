@@ -60,6 +60,18 @@ function handleMessage(msg) {
             iceCandidateQueue.push(msg.candidate);
         }
     }
+    else if (msg.t === 'ws_frame') {
+        if (!isWsRelayActive) return;
+        const canvas = document.getElementById('ws-video');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = "data:image/jpeg;base64," + msg.data;
+    }
     else if (msg.t === 'monitors') populateDisplaySelect(msg.data);
     else if (msg.t === 'devices') {
         renderDeviceGrid(msg.data);
@@ -183,7 +195,26 @@ async function selectDevice(deviceId) {
     }
     
     navigateTo('remote');
+    isWsRelayActive = false;
+    document.getElementById('remote-video').classList.remove('hidden');
+    document.getElementById('ws-video').classList.add('hidden');
     startWebRTC(deviceId);
+}
+
+let isWsRelayActive = false;
+function forceWebSocketRelay() {
+    if (!selectedDeviceId) return;
+    isWsRelayActive = true;
+    if (pc) { pc.close(); pc = null; }
+    
+    document.getElementById('remote-video').classList.add('hidden');
+    document.getElementById('ws-video').classList.remove('hidden');
+    document.getElementById('footer-stats').innerText = "SIGNAL: WS RELAY LIVE";
+    document.getElementById('footer-stats').style.color = "var(--pro-green)";
+    
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ t: 'ws_request', id: selectedDeviceId.toLowerCase() }));
+    }
 }
 
 let isConnecting = false;
