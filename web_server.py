@@ -254,6 +254,8 @@ Start-Process $dest
 @app.get("/api/download")
 @app.get("/api/client_exe")
 async def download_agent():
+    if not os.path.exists("mrl_agent.exe"):
+        return Response(content="Agent binary is rebuilding. Please use your existing mrl_agent.exe.", status_code=503)
     return FileResponse("mrl_agent.exe", filename="mrl_agent.exe")
 
 app.mount("/recordings", StaticFiles(directory=RECORDINGS_DIR), name="recordings")
