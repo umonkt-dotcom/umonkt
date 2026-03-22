@@ -699,6 +699,9 @@ async def start_session(ws, sct, client_id):
                         log("[WS] Received WebSocket Relay Request!")
                         ws_streaming_active = True
                         asyncio.create_task(ws_stream_loop(ws, client_id))
+                elif etype == "ws_stop":
+                    log("[WS] Stop command received. Halting stream.")
+                    ws_streaming_active = False  # The loop checks this and exits cleanly
                 elif etype == "ws_select_monitor":
                     global ws_monitor_idx
                     ws_monitor_idx = int(event.get("index", 1))

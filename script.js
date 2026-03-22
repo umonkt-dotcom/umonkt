@@ -198,8 +198,30 @@ function updateDetailedSpecs(device) {
 }
 
 // Session Logic
+let previousDeviceId = null;
 async function selectDevice(deviceId) {
+    // === STEP 1: Stop stream on old host ===
+    if (previousDeviceId && previousDeviceId !== deviceId && socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ t: 'ws_stop', id: previousDeviceId.toLowerCase() }));
+    }
+    previousDeviceId = deviceId;
     selectedDeviceId = deviceId;
+    isWsRelayActive = false; // Halt rendering of any old frames immediately
+
+    // === STEP 2: Clear canvas so old frozen frame disappears ===
+    const canvas = document.getElementById('ws-video');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    // Reset webcam overlay
+    const webcamFeed = document.getElementById('webcam-feed');
+    if (webcamFeed) { webcamFeed.src = ''; }
+    const webcamOverlay = document.getElementById('webcam-overlay');
+    if (webcamOverlay) webcamOverlay.style.display = 'none';
+
     document.getElementById('active-host-name').innerText = `SESSION: ${deviceId}`;
     
     // Link this portal to the target client on the signaling server
@@ -216,7 +238,7 @@ async function selectDevice(deviceId) {
     
     navigateTo('remote');
     
-    // Auto-start the WebSocket relay immediately - no manual button needed
+    // === STEP 3: Start fresh relay to new host ===
     forceWebSocketRelay();
 
     // Sync global dashboard settings to the newly selected target after a brief delay
@@ -225,12 +247,9 @@ async function selectDevice(deviceId) {
         const fps = document.getElementById('slider-fps');
         const qual = document.getElementById('slider-quality');
         const audio = document.getElementById('audio-toggle');
-        
         if (fps) sendControl({ t: 'set_fps', v: parseInt(fps.value) });
         if (qual) sendControl({ t: 'set_quality', v: parseInt(qual.value) });
         if (audio) sendControl({ t: 'toggle_audio', v: audio.checked });
-        
-        // Push the newly populated monitor index as well
         const display = document.getElementById('display-select');
         if (display && display.value) {
             sendControl({ t: 'select_monitor', index: parseInt(display.value) });
