@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.1.1-IMMORTAL"
+AGENT_VERSION = "9.1.2-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
@@ -415,6 +415,16 @@ async def start_session(ws, sct):
                     await pc.setRemoteDescription(RTCSessionDescription(sdp=safe_sdp, type=event["type"]))
                     ans = await pc.createAnswer()
                     await pc.setLocalDescription(ans)
+                    
+                    # BLOCKING ICE GATHERING LOOP (CRITICAL FIX FOR P2P TOPOLOGY)
+                    # We mathematically pause the ws.send hook for a maximum of 2.5 seconds to explicitly guarantee 
+                    # aiortc completes its STUN lookup against Google. Failing to wait outputs an empty Answer string,
+                    # rendering JavaScript completely blind and fatally resulting in ICE disconnected/failed.
+                    gather_timeout = 0
+                    while pc.iceGatheringState != "complete" and gather_timeout < 25:
+                        await asyncio.sleep(0.1)
+                        gather_timeout += 1
+                        
                     await ws.send(orjson.dumps({"t": "rtc_answer", "sdp": pc.localDescription.sdp, "type": pc.localDescription.type}).decode())
                 elif event.get("t") == "rtc_ice":
                     try:
