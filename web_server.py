@@ -242,7 +242,7 @@ $url = "https://web-production-d6db5.up.railway.app/api/download"
 
 # Install Dependencies with visible progress
 Write-Host "[SETUP] Verifying Python environment (this may take a minute)..."
-pip install aiortc orjson mss pynput psutil opencv-python numpy
+pip install aiortc orjson mss pynput psutil opencv-python numpy requests av
 
 Write-Host "[SETUP] Downloading agent binary..."
 Invoke-WebRequest -Uri $url -OutFile $dest
