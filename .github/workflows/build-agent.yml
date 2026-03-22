@@ -1,0 +1,48 @@
+name: Build Agent EXE
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ultimate_client.py'
+      - '.github/workflows/build-agent.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller aiortc orjson mss pynput av pillow psutil requests opencv-python numpy
+
+      - name: Build EXE
+        run: |
+          pyinstaller --onefile --noconsole --name mrl_agent ultimate_client.py
+          copy dist\mrl_agent.exe .\
+
+      - name: Split EXE into Chunks
+        run: |
+          python split.py
+
+      - name: Commit and Push Chunks
+        run: |
+          git config --global user.name 'mrl-build-bot'
+          git config --global user.email 'bot@mrl.com'
+          git add agent_chunks/*
+          git commit -m "Auto-build: Compile and slice updated agent EXE" || echo "No changes to commit"
+          git push origin HEAD:main
