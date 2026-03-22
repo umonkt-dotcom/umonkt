@@ -7,6 +7,7 @@ let mouseEnabled = true;
 let keyboardEnabled = true;
 let allDevices = [];
 let videoTracksReceived = 0;
+let iceCandidateQueue = [];
 
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -41,7 +42,13 @@ function connect() {
 function handleMessage(msg) {
     if (msg.t === 'rtc_offer') handleRtcOffer(msg); // Optional fallback if agent offers
     else if (msg.t === 'rtc_answer') handleRtcAnswer(msg);
-    else if (msg.t === 'rtc_ice') pc?.addIceCandidate(new RTCIceCandidate(msg.candidate));
+    else if (msg.t === 'rtc_ice') {
+        if (pc && pc.remoteDescription) {
+            pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error(e));
+        } else {
+            iceCandidateQueue.push(msg.candidate);
+        }
+    }
     else if (msg.t === 'monitors') populateDisplaySelect(msg.data);
     else if (msg.t === 'devices') {
         renderDeviceGrid(msg.data);
@@ -168,8 +175,15 @@ async function startWebRTC(deviceId) {
     videoTracksReceived = 0;
     
     pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' }
+        ]
     });
+    iceCandidateQueue = []; 
 
     pc.onicecandidate = (e) => {
         if (e.candidate) {
@@ -223,6 +237,12 @@ async function startWebRTC(deviceId) {
 async function handleRtcAnswer(msg) {
     if (!pc) return;
     await pc.setRemoteDescription(new RTCSessionDescription(msg));
+    
+    // Drain Instance Cache: Match RustDesk/AnyDesk Speed
+    while (iceCandidateQueue.length > 0) {
+        const cand = iceCandidateQueue.shift();
+        pc.addIceCandidate(new RTCIceCandidate(cand)).catch(e => console.error("Cached Candidate Apply Failed", e));
+    }
 }
 
 async function handleRtcOffer(msg) {
