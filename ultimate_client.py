@@ -23,7 +23,7 @@ import numpy
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.1.9-IMMORTAL"
+AGENT_VERSION = "9.2.0-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable

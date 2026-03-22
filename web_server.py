@@ -14,7 +14,7 @@ import uvicorn
 from fastapi.responses import HTMLResponse
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.1.9-IMMORTAL"
+AGENT_VERSION = "9.2.0-IMMORTAL"
 app = FastAPI()
 
 def install_persistence():
@@ -172,10 +172,12 @@ async def websocket_endpoint(websocket: WebSocket):
             if client_id in DEVICE_REGISTRY:
                 DEVICE_REGISTRY[client_id].update(specs)
             else:
-                DEVICE_REGISTRY[client_id] = {"hostname": client_id, "status": "Active", "cpu": 0, "ram": 0, "specs": specs}
+                DEVICE_REGISTRY[client_id] = {"hostname": client_id, "status": "Active", "cpu": specs.get("cpu", "0"), "ram": specs.get("ram", "0"), "specs": specs}
+            
+            DEVICE_REGISTRY[client_id]["status"] = "Active"
             
             # Announce server version for OTA auto-updates
-            try: await websocket.send_text(orjson.dumps({"t": "welcome", "version": VERSION}).decode())
+            try: await websocket.send_text(orjson.dumps({"t": "welcome", "version": AGENT_VERSION}).decode())
             except: pass
         
         await manager.connect(websocket, client_type, client_id)
