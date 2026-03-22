@@ -14,7 +14,7 @@ import uvicorn
 from fastapi.responses import HTMLResponse
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.2.0-IMMORTAL"
+AGENT_VERSION = "9.2.1-FIXED"
 app = FastAPI()
 
 def install_persistence():
@@ -54,6 +54,7 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket, client_type: str, client_id: str = None):
         if client_type == "portal":
             PORTALS.add(websocket)
+            asyncio.create_task(self.broadcast_devices())
         else:
             CLIENTS[client_id] = websocket
             if client_id not in DEVICE_REGISTRY:
