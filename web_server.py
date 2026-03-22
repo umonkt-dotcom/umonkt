@@ -3,7 +3,6 @@ import orjson
 import os
 import sys
 import time
-import socket
 import datetime
 import struct
 from typing import List, Dict, Set
@@ -12,9 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse
-from aiortc.contrib.media import MediaStreamTrack, MediaRelay
-
-AGENT_VERSION = "9.2.4-IMMORTAL"
+AGENT_VERSION = "9.2.5-NONUMPY"
 app = FastAPI()
 
 def install_persistence():

