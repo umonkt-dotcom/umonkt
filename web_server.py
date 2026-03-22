@@ -172,6 +172,7 @@ async def websocket_endpoint(websocket: WebSocket):
         if handshake.get("type") == "client_auth":
             client_type = "client"
             client_id = str(handshake.get("id", "Unknown"))
+            CLIENTS[client_id] = websocket
             specs = handshake.get("specs", {})
             if client_id in DEVICE_REGISTRY:
                 DEVICE_REGISTRY[client_id].update(specs)
