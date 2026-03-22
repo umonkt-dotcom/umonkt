@@ -53,8 +53,9 @@ function handleMessage(msg) {
     if (msg.t === 'rtc_offer') handleRtcOffer(msg); // Optional fallback if agent offers
     else if (msg.t === 'rtc_answer') handleRtcAnswer(msg);
     else if (msg.t === 'rtc_ice') {
+        console.log("[ICE] Remote Candidate Received:", msg.candidate);
         if (pc && pc.remoteDescription) {
-            pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error(e));
+            pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(e => console.error("ICE Add Error:", e));
         } else {
             iceCandidateQueue.push(msg.candidate);
         }
@@ -278,6 +279,7 @@ async function startWebRTC(deviceId) {
 }
 
 async function handleRtcAnswer(msg) {
+    console.log("[RTC] Answer received from Server:", msg);
     if (!pc) return;
     await pc.setRemoteDescription(new RTCSessionDescription(msg));
     
