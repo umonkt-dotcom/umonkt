@@ -12,7 +12,8 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[
         'tkinter', 'matplotlib', 'pandas', 'unittest', 'pydoc', 
-        'IPython', 'notebook', 'pygments', 'dxcam'
+        'IPython', 'notebook', 'pygments', 'dxcam', 'scipy', 
+        'PyQt5', 'PyQt6', 'PySide2', 'PySide6', 'jedi', 'PIL.ImageTk'
     ],
     noarchive=False,
     optimize=2,
