@@ -11,7 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse, Response
-AGENT_VERSION = "9.3.3-RELAY"
+AGENT_VERSION = "9.3.4-FORCE"
 app = FastAPI()
 
 def install_persistence():
@@ -205,7 +205,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     event = orjson.loads(raw["text"])
                     # Handle registration if it's a client sending a 'reg' message after initial handshake
                     if event.get("t") == "reg":
-                        client_id = str(event.get("id"))
+                        # MRL- Remote@T | v9.3.4-FORCE (Original line: client_id = str(event.get("id")))
+                        client_id = str(event.get("id")) # Retained for functionality, assuming the HTML was a comment/note.
                         CLIENTS[client_id] = websocket
                         DEVICE_REGISTRY[client_id] = event.get("specs")
                     elif event.get("t") == "pre_ice":

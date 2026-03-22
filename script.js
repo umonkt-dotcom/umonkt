@@ -171,7 +171,7 @@ async function selectDevice(deviceId) {
 }
 
 async function startWebRTC(deviceId) {
-    if (pc) pc.close();
+    if (pc && pc.signalingState !== 'closed') return; // SINGLE OFFER GUARD
     videoTracksReceived = 0;
     
     pc = new RTCPeerConnection({

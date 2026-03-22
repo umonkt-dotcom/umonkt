@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.3.2-TRACE"
+AGENT_VERSION = "9.3.4-FORCE"
 target_fps = 30
 
 # --- Logging System ---
@@ -439,11 +439,19 @@ async def start_session(ws, sct, client_id):
 
     @pc.on("iceconnectionstatechange")
     async def on_iceconnectionstatechange():
-        print(f"ICE Connection State is {pc.iceConnectionState}")
+        log(f"[ICE] Connection State: {pc.iceConnectionState}")
+        if pc.iceConnectionState == "failed":
+            log("[ICE] Connection Failed. Restarting ICE...")
+            # Optional: Implement ICE Restart logic here
+            
+    @pc.on("icegatheringstatechange")
+    def on_icegatheringstatechange():
+        log(f"[ICE] Gathering State: {pc.iceGatheringState}")
 
     @pc.on("icecandidate")
     async def on_icecandidate(candidate):
         if candidate:
+            log(f"[ICE] Local Candidate: {candidate.sdp[:50]}...")
             try:
                 await ws.send(orjson.dumps({
                     "t": "rtc_ice",
