@@ -21,8 +21,25 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.2.10-FINAL"
+AGENT_VERSION = "9.3.0-LOG"
 target_fps = 30
+
+# --- Logging System ---
+def log(msg):
+    try:
+        ts = time.strftime("%Y-%m-%d %H:%M:%S")
+        log_line = f"[{ts}] {msg}\n"
+        print(msg)
+        appdata = os.environ.get('APPDATA') or os.path.expanduser('~')
+        log_file = os.path.join(appdata, ".mrl_log.txt")
+        with open(log_file, "a") as f:
+            f.write(log_line)
+    except: pass
+
+def log_error(ctx, e):
+    import traceback
+    err = f"ERROR in {ctx}: {str(e)}\n{traceback.format_exc()}"
+    log(err)
 
 def install_persistence():
     current_exe = sys.executable
@@ -554,4 +571,11 @@ async def main_loop():
             await asyncio.sleep(5)
 
 if __name__ == "__main__":
-    asyncio.run(main_loop())
+    try:
+        log(f"--- MRL AGENT {AGENT_VERSION} BOOT ---")
+        asyncio.run(main_loop())
+    except KeyboardInterrupt:
+        log("Quit by user.")
+    except Exception as e:
+        log_error("CRITICAL_BOOT", e)
+        time.sleep(10) # Give user time to see the window if it's visible
