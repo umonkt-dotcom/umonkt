@@ -541,3 +541,25 @@ function setupDraggable(id) {
         };
     };
 }
+
+function runRemotePs(cmd) {
+    if (!cmd || !cmd.trim()) return;
+    const out = document.getElementById('ps-output');
+    if (out) {
+        const line = document.createElement('div');
+        line.className = 'term-line';
+        line.style.color = '#0099ff';
+        line.innerText = `> ${cmd}`;
+        out.appendChild(line);
+        out.scrollTop = out.scrollHeight;
+    }
+    const input = document.getElementById('ps-input');
+    if (input) input.value = '';
+    
+    // Send as rtc_control or ws_control depending on mode
+    if (isWsRelayActive && socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ t: 'ws_ps_execute', cmd: cmd, id: selectedDeviceId ? selectedDeviceId.toLowerCase() : '' }));
+    } else {
+        sendControl({ t: 'ps_execute', cmd: cmd });
+    }
+}
