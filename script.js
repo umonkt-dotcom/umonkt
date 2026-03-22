@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSliders();
 });
 
+let heartbeatInterval = null;
+
 function connect() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
@@ -24,6 +26,14 @@ function connect() {
         console.log('MRL- Link Established');
         document.getElementById('header-status-dot').className = 'dot green';
         document.getElementById('header-status-text').innerText = 'MRL- ONLINE';
+        
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        heartbeatInterval = setInterval(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ t: 'hb' }));
+            }
+        }, 10000); // 10s Heartbeat
+        
         fetchDevices();
     };
 
