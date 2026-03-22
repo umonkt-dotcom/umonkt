@@ -36,16 +36,27 @@ ws_fps = 20
 
 async def ws_stream_loop(ws, client_id):
     global ws_streaming_active, ws_monitor_idx, ws_webcam_active, ws_jpeg_quality, ws_fps
-    log("[WS] Starting Fast JPEG Fallback Stream loop...")
+    log("[WS] Starting Zero-Crash JPEG Stream loop...")
+    
+    last_frame_time = asyncio.get_event_loop().time()
+    
     try:
         with mss.mss() as sct:
-            # Pre-open webcam indices
             caps = {}
             while ws_streaming_active:
                 try:
+                    now = asyncio.get_event_loop().time()
+                    dt = now - last_frame_time
+                    target_dt = 1.0 / max(1, ws_fps)
+                    
+                    if dt < target_dt:
+                        await asyncio.sleep(target_dt - dt)
+                        continue
+                    
+                    last_frame_time = now
                     mon_idx = ws_monitor_idx
 
-                    # --- Grid mode: tile all physical monitors ---
+                    # --- Frame Capture ---
                     if mon_idx == 0 and len(sct.monitors) > 2:
                         physical = sct.monitors[1:]
                         count = len(physical)
@@ -58,12 +69,10 @@ async def ws_stream_loop(ws, client_id):
                         except: font = ImageFont.load_default()
                         for i, mon in enumerate(physical):
                             sct_img = sct.grab(mon)
-                            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-                            img.thumbnail((cell_w - 4, cell_h - 4), Image.Resampling.BILINEAR)
+                            img_mon = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                            img_mon.thumbnail((cell_w - 4, cell_h - 4), Image.Resampling.BILINEAR)
                             cx, cy = i % cols, i // cols
-                            x = cx * cell_w + (cell_w - img.width) // 2
-                            y = cy * cell_h + (cell_h - img.height) // 2
-                            grid.paste(img, (x, y))
+                            grid.paste(img_mon, (cx * cell_w + (cell_w - img_mon.width) // 2, cy * cell_h + (cell_h - img_mon.height) // 2))
                             draw.rectangle([cx * cell_w, cy * cell_h, (cx+1)*cell_w-1, (cy+1)*cell_h-1], outline=(60,60,60), width=3)
                             draw.text((cx * cell_w + 20, cy * cell_h + 10), f"DISPLAY {i+1}", fill=(255,255,255), font=font)
                         img = grid
@@ -73,51 +82,50 @@ async def ws_stream_loop(ws, client_id):
                         sct_img = sct.grab(monitor)
                         img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
-                        # Dynamic resize: preserve aspect ratio with max 1280px width
+                        # Dynamic resize for performance
                         w, h = img.size
                         if w > 1280:
                             ratio = 1280 / w
                             img = img.resize((1280, int(h * ratio)), Image.Resampling.BILINEAR)
 
-                    # Compress using dynamic quality (ws_jpeg_quality is set by set_quality handler)
-                    buffer = io.BytesIO()
-                    img.save(buffer, format="JPEG", quality=ws_jpeg_quality, subsampling=2, optimize=False)
-                    frame_bytes = buffer.getvalue()
-                    b64 = base64.b64encode(frame_bytes).decode('utf-8')
-                    await ws.send(orjson.dumps({"t": "ws_frame", "data": b64, "id": client_id}).decode())
-
-                    # Dynamic FPS throttling
-                    interval = 1.0 / max(1, ws_fps)
-                    await asyncio.sleep(interval)
+                    # --- Webcam Overlay (Optional) ---
                     if ws_webcam_active:
                         try:
                             import cv2
                             if 0 not in caps:
-                                cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-                                if cap.isOpened(): caps[0] = cap
-                            if 0 in caps:
+                                caps[0] = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+                            if 0 in caps and caps[0].isOpened():
                                 ret, frame = caps[0].read()
                                 if ret:
                                     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                                     cam_img = Image.fromarray(rgb)
-                                    cam_img.thumbnail((400, 300), Image.Resampling.BILINEAR)
-                                    cam_buf = io.BytesIO()
-                                    cam_img.save(cam_buf, format="JPEG", quality=50)
-                                    cam_b64 = base64.b64encode(cam_buf.getvalue()).decode('utf-8')
-                                    await ws.send(orjson.dumps({"t": "ws_cam_frame", "data": cam_b64, "id": client_id}).decode())
+                                    cam_img.thumbnail((320, 240))
+                                    img.paste(cam_img, (20, img.height - cam_img.height - 20))
                         except Exception as ce:
-                            log(f"[WS] Webcam error: {ce}")
+                            log(f"[WS_CAM] Hub fail: {ce}")
 
-                    await asyncio.sleep(0.066)  # ~15 FPS
-                except Exception as e:
-                    log(f"[WS_STREAM] Inner Loop Error: {e}")
-                    await asyncio.sleep(1)
-            # Clean up webcam
-            for cap in caps.values(): cap.release()
-    except Exception as exc:
-        log(f"[WS_STREAM] Fatal Loop Error: {exc}")
+                    # --- Encode & Send ---
+                    buffer = io.BytesIO()
+                    img.save(buffer, format="JPEG", quality=ws_jpeg_quality, optimize=False, progressive=False)
+                    frame_bytes = buffer.getvalue()
+                    b64 = base64.b64encode(frame_bytes).decode('utf-8')
+                    
+                    await ws.send(orjson.dumps({
+                        "t": "ws_frame", 
+                        "data": b64, 
+                        "id": client_id,
+                        "ts": time.time()
+                    }).decode())
+
+                except Exception as inner_e:
+                    log(f"[WS_LOOP] Iteration error: {inner_e}")
+                    await asyncio.sleep(0.5)
+                    
+    except Exception as outer_e:
+        log(f"[WS_LOOP] Fatal loop exit: {outer_e}")
     finally:
         ws_streaming_active = False
+        log("[WS] Stream loop halted.")
 
 AGENT_VERSION = "9.3.12-UCON"
 target_fps = 30
