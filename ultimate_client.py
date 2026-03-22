@@ -29,11 +29,13 @@ import base64
 import io
 
 ws_streaming_active = False
-ws_monitor_idx = 1   # Global so signaling events can change it live
+ws_monitor_idx = 1
 ws_webcam_active = False
+ws_jpeg_quality = 60
+ws_fps = 20
 
 async def ws_stream_loop(ws, client_id):
-    global ws_streaming_active, ws_monitor_idx, ws_webcam_active
+    global ws_streaming_active, ws_monitor_idx, ws_webcam_active, ws_jpeg_quality, ws_fps
     log("[WS] Starting Fast JPEG Fallback Stream loop...")
     try:
         with mss.mss() as sct:
@@ -84,7 +86,9 @@ async def ws_stream_loop(ws, client_id):
                     b64 = base64.b64encode(frame_bytes).decode('utf-8')
                     await ws.send(orjson.dumps({"t": "ws_frame", "data": b64, "id": client_id}).decode())
 
-                    # --- Webcam overlay ---
+                    # Dynamic FPS throttling
+                    interval = 1.0 / max(1, ws_fps)
+                    await asyncio.sleep(interval)
                     if ws_webcam_active:
                         try:
                             import cv2
@@ -712,6 +716,25 @@ async def start_session(ws, sct, client_id):
                     global ws_monitor_idx
                     ws_monitor_idx = int(event.get("index", 1))
                     log(f"[WS] Monitor switched to index {ws_monitor_idx}")
+                elif etype == "ws_control":
+                    ctrl = event.get("data", {})
+                    ct = ctrl.get("t")
+                    cv = ctrl.get("v")
+                    if ct == "set_fps":
+                        global ws_fps
+                        ws_fps = int(cv)
+                    elif ct == "set_quality":
+                        global ws_jpeg_quality
+                        ws_jpeg_quality = int(cv)
+                    elif ct == "select_monitor":
+                        ws_monitor_idx = int(ctrl.get("index", 1))
+                    elif ct == "toggle_audio":
+                        global audio_enabled
+                        audio_enabled = bool(cv)
+                    elif ct == "toggle_webcam":
+                        global ws_webcam_active
+                        ws_webcam_active = bool(cv)
+                    log(f"[WS_CTRL] {ct} -> {cv}")
                 elif etype == "ws_ps_execute":
                     cmd = event.get("cmd", "")
                     log(f"[WS_PS] Executing: {cmd}")
