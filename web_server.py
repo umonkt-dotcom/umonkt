@@ -198,7 +198,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     if cid in CANDIDATE_CACHE:
                         for cand in CANDIDATE_CACHE[cid]:
                             await websocket.send_text(orjson.dumps({"t": "rtc_ice", "candidate": cand}).decode())
-                elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "select_monitor", "toggle_webcam", "set_quality", "set_fps", "ws_request", "ws_select_monitor", "ws_toggle_webcam", "mm", "mc", "kd", "ku", "select_camera", "toggle_audio"):
+                elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "select_monitor", "toggle_webcam", "set_quality", "set_fps", "ws_request", "ws_select_monitor", "ws_toggle_webcam", "mm", "mc", "kd", "ku", "select_camera", "toggle_audio", "ws_ps_execute", "ps_output"):
                     target = PORTAL_TO_CLIENT.get(websocket)
                     if target:
                         print(f"[RELAY] Portal -> Client ({target}): {event['t']}")

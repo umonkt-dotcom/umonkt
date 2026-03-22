@@ -151,6 +151,17 @@
                         </div>
                     </div>
 
+                    <div class="control-section" style="margin-top: 20px;" id="terminal-section">
+                        <h3 class="section-title"><i class="fas fa-terminal" style="margin-right:8px; color:var(--pro-blue);"></i> Remote PowerShell</h3>
+                        <div id="ps-output" class="terminal">
+                            <div class="term-line">System ready. Type a command...</div>
+                        </div>
+                        <div class="term-input-wrap">
+                            <span style="color:var(--pro-blue);">></span>
+                            <input type="text" id="ps-input" class="term-input" placeholder="Enter command..." onkeydown="if(event.key==='Enter') runRemotePs(this.value)">
+                        </div>
+                    </div>
+
                     <div class="control-section" style="margin-top: 20px;">
                         <h3 class="section-title">System Specs</h3>
                         <div id="detailed-specs" class="specs-list">

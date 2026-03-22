@@ -81,6 +81,16 @@ function handleMessage(msg) {
         }
     }
     else if (msg.t === 'monitors') populateDisplaySelect(msg.data);
+    else if (msg.t === 'ps_output') {
+        const out = document.getElementById('ps-output');
+        if (out) {
+            const line = document.createElement('div');
+            line.className = 'term-line';
+            line.innerText = msg.data;
+            out.appendChild(line);
+            out.scrollTop = out.scrollHeight;
+        }
+    }
     else if (msg.t === 'devices') {
         renderDeviceGrid(msg.data);
         renderActiveSidebar(msg.data);

