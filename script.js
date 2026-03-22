@@ -159,6 +159,11 @@ async function selectDevice(deviceId) {
     selectedDeviceId = deviceId;
     document.getElementById('active-host-name').innerText = `SESSION: ${deviceId}`;
     
+    // Explicitly link this portal to the target client on the signaling server
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ t: 'select_device', id: deviceId }));
+    }
+    
     // Instant DOM Spec & Display Prep from memory
     const target = allDevices.find(d => d.hostname === deviceId);
     if (target && target.specs) {
