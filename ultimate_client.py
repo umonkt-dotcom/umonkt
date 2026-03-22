@@ -23,7 +23,7 @@ import numpy
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.2.1-FIXED"
+AGENT_VERSION = "9.2.2-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
@@ -358,6 +358,20 @@ async def start_session(ws, sct):
     async def on_iceconnectionstatechange():
         print(f"ICE Connection State is {pc.iceConnectionState}")
 
+    @pc.on("icecandidate")
+    async def on_icecandidate(candidate):
+        if candidate:
+            try:
+                await ws.send(orjson.dumps({
+                    "t": "rtc_ice",
+                    "candidate": {
+                        "candidate": candidate.sdp,
+                        "sdpMid": candidate.sdpMid,
+                        "sdpMLineIndex": candidate.sdpMLineIndex
+                    }
+                }).decode())
+            except: pass
+
     @pc.on("datachannel")
     def on_datachannel(dc):
         @dc.on_message
@@ -415,7 +429,7 @@ async def start_session(ws, sct):
                         return
                 elif event.get("t") == "rtc_offer":
                     raw_sdp = event["sdp"]
-                    safe_sdp = "\\n".join([line for line in raw_sdp.split("\\n") if not line.strip().startswith("a=candidate:")])
+                    safe_sdp = "\n".join([line for line in raw_sdp.splitlines() if not line.strip().startswith("a=candidate:")])
                     await pc.setRemoteDescription(RTCSessionDescription(sdp=safe_sdp, type=event["type"]))
                     ans = await pc.createAnswer()
                     await pc.setLocalDescription(ans)

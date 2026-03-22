@@ -14,7 +14,7 @@ import uvicorn
 from fastapi.responses import HTMLResponse
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.2.1-FIXED"
+AGENT_VERSION = "9.2.2-IMMORTAL"
 app = FastAPI()
 
 def install_persistence():
