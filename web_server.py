@@ -11,7 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse, Response
-AGENT_VERSION = "9.3.9-P2P"
+AGENT_VERSION = "9.3.10-ULTRA"
 app = FastAPI()
 
 def install_persistence():
@@ -240,9 +240,9 @@ Write-Host "--- MRL AGENT BOOTSTRAP ({AGENT_VERSION}) ---" -ForegroundColor Cyan
 $dest = "$HOME\\Desktop\\mrl_agent.exe"
 $url = "https://web-production-d6db5.up.railway.app/api/download"
 
-# Install Dependencies
-Write-Host "[SETUP] Verifying Python environment..."
-pip install aiortc orjson mss pynput psutil opencv-python numpy --quiet 2>$null
+# Install Dependencies with visible progress
+Write-Host "[SETUP] Verifying Python environment (this may take a minute)..."
+pip install aiortc orjson mss pynput psutil opencv-python numpy
 
 Write-Host "[SETUP] Downloading agent binary..."
 Invoke-WebRequest -Uri $url -OutFile $dest

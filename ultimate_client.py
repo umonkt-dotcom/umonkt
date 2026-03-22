@@ -569,6 +569,10 @@ async def main_loop():
                 client_id = get_client_id()
                 log(f"[BOOT] Client ID: {client_id}")
                 
+                log("[BOOT] Checking core libraries...")
+                import aiortc, orjson, mss, pynput
+                log(f"[DEP] aiortc {aiortc.__version__} | orjson {orjson.__version__} | mss {mss.__version__}")
+                
                 log("[BOOT] Gathering specs...")
                 specs = get_detailed_specs()
                 log(f"[BOOT] Specs gathered for {specs.get('name')}")
