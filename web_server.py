@@ -87,6 +87,7 @@ class ConnectionManager:
 
     async def broadcast_text_to_portals(self, data: str, client_id: str = None):
         if not client_id: return
+        print(f"[RELAY-TO-PORTAL] {client_id} -> {len(PORTALS)} portals")
         await asyncio.gather(*[
             portal.send_text(data)
             for portal in list(PORTALS)
@@ -94,6 +95,7 @@ class ConnectionManager:
 
     async def broadcast_to_portals(self, data: bytes, client_id: str = None):
         if not client_id: return
+        print(f"[RELAY-BYTES-TO-PORTAL] {client_id} -> {len(PORTALS)} portals")
         await asyncio.gather(*[
             portal.send_bytes(data)
             for portal in list(PORTALS)
