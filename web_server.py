@@ -10,8 +10,7 @@ from typing import List, Dict, Set
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
-from fastapi.responses import HTMLResponse
-AGENT_VERSION = "9.2.5-NONUMPY"
+AGENT_VERSION = "9.2.6-INSTANT"
 app = FastAPI()
 
 def install_persistence():
@@ -187,6 +186,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 if event["t"] == "select_device":
                     PORTAL_TO_CLIENT[websocket] = str(event["id"])
                 elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "select_monitor", "toggle_webcam", "set_quality", "set_fps"):
+                    target = PORTAL_TO_CLIENT.get(websocket)
+                    if target: await manager.send_to_client(target, event)
                     target = PORTAL_TO_CLIENT.get(websocket)
                     if target: await manager.send_to_client(target, event)
             else:
