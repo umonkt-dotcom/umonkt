@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.3.7-CORE"
+AGENT_VERSION = "9.3.8-FIX"
 target_fps = 30
 
 # --- Logging System ---
@@ -567,7 +567,7 @@ async def start_session(ws, sct, client_id):
             except Exception as e:
                 log(f"[SIGNAL] Error: {e}")
 
-    await listen_signaling()
+    await listen_signaling(ws, client_id)
 
 # -------------------------------------------------------
 # Bootstrap
