@@ -11,7 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse, Response
-AGENT_VERSION = "9.3.1-DEBUG"
+AGENT_VERSION = "9.3.2-TRACE"
 app = FastAPI()
 
 def install_persistence():

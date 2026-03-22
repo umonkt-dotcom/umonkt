@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.3.1-DEBUG"
+AGENT_VERSION = "9.3.2-TRACE"
 target_fps = 30
 
 # --- Logging System ---
@@ -505,17 +505,19 @@ async def start_session(ws, sct, client_id):
         async for msg in ws:
             try:
                 event = orjson.loads(msg)
-                if event.get("t") == "welcome":
+                etype = event.get("t")
+                log(f"[SIGNAL] Message: {etype}")
+                
+                if etype == "welcome":
                     server_ver = event.get("version", "0.0.0")
                     if server_ver != AGENT_VERSION:
                         AutoUpdater.update_and_restart(server_ver)
                         return
-                    # ONLY start gathering after server is ready
                     asyncio.create_task(pre_gather_candidates(ws, client_id))
-                elif event.get("t") == "rtc_offer":
-                    raw_sdp = event["sdp"]
-                    safe_sdp = "\n".join([line for line in raw_sdp.splitlines() if not line.strip().startswith("a=candidate:")])
-                    await pc.setRemoteDescription(RTCSessionDescription(sdp=safe_sdp, type=event["type"]))
+                elif etype == "rtc_offer":
+                    log(f"[RTC] Offer received (SDP Length: {len(event['sdp'])})")
+                    # NO STUN STRIPPING - Let aiortc handle the candidates
+                    await pc.setRemoteDescription(RTCSessionDescription(sdp=event["sdp"], type=event["type"]))
                     ans = await pc.createAnswer()
                     await pc.setLocalDescription(ans)
                     
@@ -530,10 +532,12 @@ async def start_session(ws, sct, client_id):
                     final_sdp_str = "\n".join(fixed_sdp)
                     
                     await ws.send(orjson.dumps({"t": "rtc_answer", "sdp": final_sdp_str, "type": pc.localDescription.type}).decode())
-                elif event.get("t") == "rtc_ice":
+                    log("[RTC] Answer sent.")
+                elif etype == "rtc_ice":
                     try:
                         from aiortc.sdp import candidate_from_sdp
                         cand_str = event["candidate"]["candidate"]
+                        log(f"[ICE] Remote Candidate: {cand_str[:50]}...")
                         if cand_str.startswith("candidate:"):
                             cand_str = cand_str[10:]
                         if " typ " not in f" {cand_str} ":
@@ -542,10 +546,14 @@ async def start_session(ws, sct, client_id):
                         cand_obj.sdpMid = event["candidate"]["sdpMid"]
                         cand_obj.sdpMLineIndex = event["candidate"]["sdpMLineIndex"]
                         await pc.addIceCandidate(cand_obj)
+                        log("[ICE] Remote Candidate Added.")
                     except Exception as e:
-                        pass
+                        log(f"[ICE] Error adding candidate: {e}")
+                elif etype == "rtc_control":
+                    # Handle any server-side controls
+                    log(f"[CTRL] Command: {event.get('cmd')}")
             except Exception as e:
-                print(f"Signaling error: {e}")
+                log(f"[SIGNAL] Error: {e}")
 
     await listen_signaling()
 
