@@ -72,6 +72,14 @@ function handleMessage(msg) {
         };
         img.src = "data:image/jpeg;base64," + msg.data;
     }
+    else if (msg.t === 'ws_cam_frame') {
+        const feed = document.getElementById('webcam-feed');
+        if (feed) {
+            feed.src = "data:image/jpeg;base64," + msg.data;
+            const overlay = document.getElementById('webcam-overlay');
+            if (overlay) overlay.style.display = 'block';
+        }
+    }
     else if (msg.t === 'monitors') populateDisplaySelect(msg.data);
     else if (msg.t === 'devices') {
         renderDeviceGrid(msg.data);
@@ -391,7 +399,10 @@ function setupInputListeners() {
 }
 
 function sendControl(data) {
-    if (dataChannel && dataChannel.readyState === 'open') {
+    if (isWsRelayActive && socket && socket.readyState === WebSocket.OPEN) {
+        // In WS relay mode: route controls via signaling channel
+        socket.send(JSON.stringify({ ...data, id: selectedDeviceId ? selectedDeviceId.toLowerCase() : '' }));
+    } else if (dataChannel && dataChannel.readyState === 'open') {
         dataChannel.send(JSON.stringify(data));
     }
 }
@@ -463,9 +474,14 @@ document.getElementById('audio-toggle').onchange = (e) => {
     sendControl({ t: 'toggle_audio', v: e.target.checked });
 };
 document.getElementById('webcam-control').onchange = (e) => {
+    const enabled = e.target.checked;
     const v = document.getElementById('webcam-overlay');
-    v.classList.toggle('hidden', !e.target.checked);
-    sendControl({ t: 'toggle_webcam', v: e.target.checked });
+    if (v) v.classList.toggle('hidden', !enabled);
+    if (isWsRelayActive && socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ t: 'ws_toggle_webcam', v: enabled, id: selectedDeviceId ? selectedDeviceId.toLowerCase() : '' }));
+    } else {
+        sendControl({ t: 'toggle_webcam', v: enabled });
+    }
 };
 
 // Advanced Controls logic

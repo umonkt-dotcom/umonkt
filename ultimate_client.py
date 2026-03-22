@@ -24,41 +24,81 @@ import base64
 import io
 
 ws_streaming_active = False
+ws_monitor_idx = 1   # Global so signaling events can change it live
+ws_webcam_active = False
 
-async def ws_stream_loop(ws, client_id, get_monitor_idx):
-    global ws_streaming_active
+async def ws_stream_loop(ws, client_id):
+    global ws_streaming_active, ws_monitor_idx, ws_webcam_active
     log("[WS] Starting Fast JPEG Fallback Stream loop...")
     try:
         with mss.mss() as sct:
+            # Pre-open webcam indices
+            caps = {}
             while ws_streaming_active:
                 try:
-                    monitor_idx = get_monitor_idx()
-                    if monitor_idx >= len(sct.monitors) or monitor_idx < 1:
-                        monitor_idx = 1
-                    
-                    monitor = sct.monitors[monitor_idx]
-                    sct_img = sct.grab(monitor)
-                    
-                    # Convert to PIL
-                    img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-                    
-                    # Resize (Fast interpolation for speed vs quality)
-                    img.thumbnail((1280, 720), Image.Resampling.BILINEAR)
-                    
-                    # Compress to fast JPEG
+                    mon_idx = ws_monitor_idx
+
+                    # --- Grid mode: tile all physical monitors ---
+                    if mon_idx == 0 and len(sct.monitors) > 2:
+                        physical = sct.monitors[1:]
+                        count = len(physical)
+                        cols = 2 if count > 1 else 1
+                        rows = (count + cols - 1) // cols
+                        cell_w, cell_h = 960, 540
+                        grid = Image.new("RGB", (cols * cell_w, rows * cell_h), (15, 15, 15))
+                        draw = ImageDraw.Draw(grid)
+                        try: font = ImageFont.truetype("arial.ttf", 36)
+                        except: font = ImageFont.load_default()
+                        for i, mon in enumerate(physical):
+                            sct_img = sct.grab(mon)
+                            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                            img.thumbnail((cell_w - 4, cell_h - 4), Image.Resampling.BILINEAR)
+                            cx, cy = i % cols, i // cols
+                            x = cx * cell_w + (cell_w - img.width) // 2
+                            y = cy * cell_h + (cell_h - img.height) // 2
+                            grid.paste(img, (x, y))
+                            draw.rectangle([cx * cell_w, cy * cell_h, (cx+1)*cell_w-1, (cy+1)*cell_h-1], outline=(60,60,60), width=3)
+                            draw.text((cx * cell_w + 20, cy * cell_h + 10), f"DISPLAY {i+1}", fill=(255,255,255), font=font)
+                        img = grid
+                    else:
+                        safe_idx = min(max(mon_idx, 1), len(sct.monitors) - 1)
+                        monitor = sct.monitors[safe_idx]
+                        sct_img = sct.grab(monitor)
+                        img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                        img.thumbnail((1280, 720), Image.Resampling.BILINEAR)
+
+                    # Compress screen frame
                     buffer = io.BytesIO()
                     img.save(buffer, format="JPEG", quality=40)
                     b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-                    
-                    # Send over WebSocket
-                    msg = {"t": "ws_frame", "data": b64, "id": client_id}
-                    await ws.send(orjson.dumps(msg).decode())
-                    
-                    # Pace the stream (e.g. 15 FPS)
-                    await asyncio.sleep(0.066)
+                    await ws.send(orjson.dumps({"t": "ws_frame", "data": b64, "id": client_id}).decode())
+
+                    # --- Webcam overlay ---
+                    if ws_webcam_active:
+                        try:
+                            import cv2
+                            if 0 not in caps:
+                                cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+                                if cap.isOpened(): caps[0] = cap
+                            if 0 in caps:
+                                ret, frame = caps[0].read()
+                                if ret:
+                                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                                    cam_img = Image.fromarray(rgb)
+                                    cam_img.thumbnail((400, 300), Image.Resampling.BILINEAR)
+                                    cam_buf = io.BytesIO()
+                                    cam_img.save(cam_buf, format="JPEG", quality=50)
+                                    cam_b64 = base64.b64encode(cam_buf.getvalue()).decode('utf-8')
+                                    await ws.send(orjson.dumps({"t": "ws_cam_frame", "data": cam_b64, "id": client_id}).decode())
+                        except Exception as ce:
+                            log(f"[WS] Webcam error: {ce}")
+
+                    await asyncio.sleep(0.066)  # ~15 FPS
                 except Exception as e:
                     log(f"[WS_STREAM] Inner Loop Error: {e}")
                     await asyncio.sleep(1)
+            # Clean up webcam
+            for cap in caps.values(): cap.release()
     except Exception as exc:
         log(f"[WS_STREAM] Fatal Loop Error: {exc}")
     finally:
@@ -637,12 +677,15 @@ async def start_session(ws, sct, client_id):
                     if not ws_streaming_active:
                         log("[WS] Received WebSocket Relay Request!")
                         ws_streaming_active = True
-                        asyncio.create_task(ws_stream_loop(ws, client_id, lambda: getattr(video_track, 'monitor_idx', 1)))
+                        asyncio.create_task(ws_stream_loop(ws, client_id))
                 elif etype == "ws_select_monitor":
-                    idx = int(event.get("index", 1))
-                    if hasattr(video_track, 'update_settings'):
-                        video_track.update_settings({"monitor": idx})
-                    log(f"[WS] Monitor switched to index {idx}")
+                    global ws_monitor_idx
+                    ws_monitor_idx = int(event.get("index", 1))
+                    log(f"[WS] Monitor switched to index {ws_monitor_idx}")
+                elif etype == "ws_toggle_webcam":
+                    global ws_webcam_active
+                    ws_webcam_active = bool(event.get("v", False))
+                    log(f"[WS] Webcam {'enabled' if ws_webcam_active else 'disabled'}")
             except Exception as e:
                 log(f"[SIGNAL] Error: {e}")
 
