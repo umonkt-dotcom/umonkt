@@ -171,7 +171,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
         if handshake.get("type") == "client_auth":
             client_type = "client"
-            client_id = str(handshake.get("id", "Unknown"))
+            client_id = str(handshake.get("id", "Unknown")).lower()
             CLIENTS[client_id] = websocket
             specs = handshake.get("specs", {})
             if client_id in DEVICE_REGISTRY:
@@ -192,7 +192,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 data = await websocket.receive_text()
                 event = orjson.loads(data)
                 if event["t"] == "select_device":
-                    cid = str(event["id"])
+                    cid = str(event["id"]).lower()
                     PORTAL_TO_CLIENT[websocket] = cid
                     # RustDesk-Instant Logic: Push pre-gathered candidates immediately
                     if cid in CANDIDATE_CACHE:

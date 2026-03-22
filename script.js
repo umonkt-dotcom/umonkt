@@ -161,7 +161,7 @@ async function selectDevice(deviceId) {
     
     // Explicitly link this portal to the target client on the signaling server
     if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ t: 'select_device', id: deviceId }));
+        socket.send(JSON.stringify({ t: 'select_device', id: deviceId.toLowerCase() }));
     }
     
     // Instant DOM Spec & Display Prep from memory
