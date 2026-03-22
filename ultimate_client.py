@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.1.0-IMMORTAL"
+AGENT_VERSION = "9.1.1-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
@@ -410,7 +410,9 @@ async def start_session(ws, sct):
                         AutoUpdater.update_and_restart(server_ver)
                         return
                 elif event.get("t") == "rtc_offer":
-                    await pc.setRemoteDescription(RTCSessionDescription(sdp=event["sdp"], type=event["type"]))
+                    raw_sdp = event["sdp"]
+                    safe_sdp = "\\n".join([line for line in raw_sdp.split("\\n") if not line.strip().startswith("a=candidate:")])
+                    await pc.setRemoteDescription(RTCSessionDescription(sdp=safe_sdp, type=event["type"]))
                     ans = await pc.createAnswer()
                     await pc.setLocalDescription(ans)
                     await ws.send(orjson.dumps({"t": "rtc_answer", "sdp": pc.localDescription.sdp, "type": pc.localDescription.type}).decode())
@@ -420,6 +422,8 @@ async def start_session(ws, sct):
                         cand_str = event["candidate"]["candidate"]
                         if cand_str.startswith("candidate:"):
                             cand_str = cand_str[10:]
+                        if " typ " not in f" {cand_str} ":
+                            continue
                         cand_obj = candidate_from_sdp(cand_str)
                         cand_obj.sdpMid = event["candidate"]["sdpMid"]
                         cand_obj.sdpMLineIndex = event["candidate"]["sdpMLineIndex"]
