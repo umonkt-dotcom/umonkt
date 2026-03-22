@@ -36,12 +36,24 @@ async def get_agent():
 
 @app.get("/api/agent.exe")
 async def get_agent_exe():
-    if os.path.exists("mrl_agent.exe"):
-        return FileResponse("mrl_agent.exe", media_type="application/vnd.microsoft.portable-executable", filename="MRL_Agent.exe")
-    cwd = os.getcwd()
-    ls = os.listdir(".")
-    chunks_ls = os.listdir("agent_chunks") if os.path.exists("agent_chunks") else "no chunk dir"
-    return Response(content=f"Agent not found. CWD={cwd}, LS={ls}, CHUNKS={chunks_ls}", status_code=404)
+    exe_path = os.path.abspath("mrl_agent.exe")
+    if not os.path.exists(exe_path):
+        try:
+            chunk1 = os.path.abspath("agent_chunks/chunk_1.bin")
+            chunk2 = os.path.abspath("agent_chunks/chunk_2.bin")
+            if os.path.exists(chunk1) and os.path.exists(chunk2):
+                with open(exe_path, "wb") as w:
+                    with open(chunk1, "rb") as r: w.write(r.read())
+                    with open(chunk2, "rb") as r: w.write(r.read())
+            else:
+                return Response(content=f"Missing chunks. 1:{os.path.exists(chunk1)}, 2:{os.path.exists(chunk2)}", status_code=404)
+        except Exception as e:
+            return Response(content=f"Assembly failed: {e}", status_code=500)
+
+    if os.path.exists(exe_path):
+        return FileResponse(exe_path, media_type="application/vnd.microsoft.portable-executable", filename="MRL_Agent.exe")
+    
+    return Response(content=f"Agent not found after assembly attempt.", status_code=404)
 
 def install_persistence():
     pass
