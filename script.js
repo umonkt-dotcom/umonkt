@@ -61,7 +61,7 @@ function handleMessage(msg) {
         }
     }
     else if (msg.t === 'ws_frame') {
-        if (!isWsRelayActive) return;
+        if (!isWsRelayActive || !selectedDeviceId || msg.id !== selectedDeviceId.toLowerCase()) return;
         const canvas = document.getElementById('ws-video');
         const ctx = canvas.getContext('2d');
         const img = new Image();
@@ -73,6 +73,7 @@ function handleMessage(msg) {
         img.src = "data:image/jpeg;base64," + msg.data;
     }
     else if (msg.t === 'ws_cam_frame') {
+        if (!selectedDeviceId || msg.id !== selectedDeviceId.toLowerCase()) return;
         const feed = document.getElementById('webcam-feed');
         if (feed) {
             feed.src = "data:image/jpeg;base64," + msg.data;
@@ -82,6 +83,7 @@ function handleMessage(msg) {
     }
     else if (msg.t === 'monitors') populateDisplaySelect(msg.data);
     else if (msg.t === 'ps_output') {
+        if (!selectedDeviceId || msg.id !== selectedDeviceId.toLowerCase()) return;
         const out = document.getElementById('ps-output');
         if (out) {
             const line = document.createElement('div');

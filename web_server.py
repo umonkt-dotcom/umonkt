@@ -128,11 +128,22 @@ class ConnectionManager:
 
     async def broadcast_text_to_portals(self, data: str, client_id: str = None):
         if not client_id: return
-        print(f"[RELAY-TO-PORTAL] {client_id} -> {len(PORTALS)} portals")
-        await asyncio.gather(*[
-            portal.send_text(data)
-            for portal in list(PORTALS)
-        ], return_exceptions=True)
+        
+        # Multitenancy Stream Isolation:
+        # Detect event type efficiently without complete JSON parse if possible, or parse safely
+        try: event = orjson.loads(data)
+        except: event = {}
+        etype = event.get("t")
+
+        for portal in list(PORTALS):
+            # If this is a high-bandwidth visual/terminal stream, ONLY send to portals actively looking at this client
+            if etype in ("ws_frame", "ws_cam_frame", "ps_output"):
+                watching_target = PORTAL_TO_CLIENT.get(portal)
+                if watching_target != client_id:
+                    continue # Drop packet
+            
+            try: await portal.send_text(data)
+            except Exception: pass
 
     async def broadcast_to_portals(self, data: bytes, client_id: str = None):
         if not client_id: return
