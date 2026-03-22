@@ -158,7 +158,8 @@
                         </div>
                         <div class="term-input-wrap">
                             <span style="color:var(--pro-blue);">></span>
-                            <input type="text" id="ps-input" class="term-input" placeholder="Enter command..." onkeydown="if(event.key==='Enter') runRemotePs(this.value)">
+                            <input type="text" id="ps-input" class="term-input" placeholder="Enter command..." onkeydown="if(event.key==='Enter') { runRemotePs(this.value); event.preventDefault(); }">
+                            <button class="btn-icon" onclick="runRemotePs(document.getElementById('ps-input').value)" style="background:none; border:none; color:var(--pro-blue); cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
                         </div>
                     </div>
 
