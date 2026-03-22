@@ -218,6 +218,24 @@ async function selectDevice(deviceId) {
     
     // Auto-start the WebSocket relay immediately - no manual button needed
     forceWebSocketRelay();
+
+    // Sync global dashboard settings to the newly selected target after a brief delay
+    setTimeout(() => {
+        if (!selectedDeviceId) return;
+        const fps = document.getElementById('slider-fps');
+        const qual = document.getElementById('slider-quality');
+        const audio = document.getElementById('audio-toggle');
+        
+        if (fps) sendControl({ t: 'set_fps', v: parseInt(fps.value) });
+        if (qual) sendControl({ t: 'set_quality', v: parseInt(qual.value) });
+        if (audio) sendControl({ t: 'toggle_audio', v: audio.checked });
+        
+        // Push the newly populated monitor index as well
+        const display = document.getElementById('display-select');
+        if (display && display.value) {
+            sendControl({ t: 'select_monitor', index: parseInt(display.value) });
+        }
+    }, 800);
 }
 
 let isWsRelayActive = false;
