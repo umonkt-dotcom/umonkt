@@ -90,7 +90,6 @@ class ConnectionManager:
         await asyncio.gather(*[
             portal.send_text(data)
             for portal in list(PORTALS)
-            if PORTAL_TO_CLIENT.get(portal) == client_id
         ], return_exceptions=True)
 
     async def broadcast_to_portals(self, data: bytes, client_id: str = None):
@@ -98,7 +97,6 @@ class ConnectionManager:
         await asyncio.gather(*[
             portal.send_bytes(data)
             for portal in list(PORTALS)
-            if PORTAL_TO_CLIENT.get(portal) == client_id
         ], return_exceptions=True)
 
     async def send_to_client(self, client_id: str, data: dict):
