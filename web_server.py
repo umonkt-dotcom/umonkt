@@ -10,7 +10,8 @@ from typing import List, Dict, Set
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
-AGENT_VERSION = "9.2.6-INSTANT"
+from fastapi.responses import HTMLResponse, Response
+AGENT_VERSION = "9.2.7-STABLE"
 app = FastAPI()
 
 def install_persistence():
@@ -26,6 +27,7 @@ PORTALS: Set[WebSocket] = set()
 CLIENTS: Dict[str, WebSocket] = {}
 PORTAL_TO_CLIENT: Dict[WebSocket, str] = {}
 DEVICE_REGISTRY: Dict[str, dict] = {}
+CANDIDATE_CACHE: Dict[str, List[dict]] = {}
 
 def load_registry():
     global DEVICE_REGISTRY
@@ -184,16 +186,32 @@ async def websocket_endpoint(websocket: WebSocket):
                 data = await websocket.receive_text()
                 event = orjson.loads(data)
                 if event["t"] == "select_device":
-                    PORTAL_TO_CLIENT[websocket] = str(event["id"])
+                    cid = str(event["id"])
+                    PORTAL_TO_CLIENT[websocket] = cid
+                    # RustDesk-Instant Logic: Push pre-gathered candidates immediately
+                    if cid in CANDIDATE_CACHE:
+                        for cand in CANDIDATE_CACHE[cid]:
+                            await websocket.send_text(orjson.dumps({"t": "rtc_ice", "candidate": cand}).decode())
+                elif event["t"] == "pre_ice":
+                    cid = str(event.get("id"))
+                    if cid:
+                        if cid not in CANDIDATE_CACHE: CANDIDATE_CACHE[cid] = []
+                        CANDIDATE_CACHE[cid].append(event.get("candidate"))
                 elif event["t"] in ("rtc_offer", "rtc_ice", "get_processes", "kill_process", "select_monitor", "toggle_webcam", "set_quality", "set_fps"):
-                    target = PORTAL_TO_CLIENT.get(websocket)
-                    if target: await manager.send_to_client(target, event)
                     target = PORTAL_TO_CLIENT.get(websocket)
                     if target: await manager.send_to_client(target, event)
             else:
                 raw = await websocket.receive()
                 if "text" in raw:
                     event = orjson.loads(raw["text"])
+                    # Handle registration if it's a client sending a 'reg' message after initial handshake
+                    if event.get("t") == "reg":
+                        client_id = str(event.get("id"))
+                        # client_type is already "client" from initial handshake
+                        CLIENTS[client_id] = websocket
+                        DEVICE_REGISTRY[client_id] = event.get("specs")
+                        # Send cached candidates to client? No, clients send to portals.
+                        # Portals need to know when a client has cached candidates.
                     await manager.broadcast_text_to_portals(orjson.dumps(event).decode(), client_id)
                 elif "bytes" in raw:
                     data = raw["bytes"]

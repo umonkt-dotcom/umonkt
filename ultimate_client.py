@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.2.6-INSTANT"
+AGENT_VERSION = "9.2.7-STABLE"
 target_fps = 30
 
 def install_persistence():
@@ -357,6 +357,39 @@ class SystemAudioTrack(AudioStreamTrack):
 # -------------------------------------------------------
 # Messaging & WebRTC Core
 # -------------------------------------------------------
+async def pre_gather_candidates(ws, client_id):
+    """Proactively gather ICE candidates to match RustDesk/AnyDesk instant connectivity."""
+    pc = RTCPeerConnection(configuration=RTCConfiguration(
+        iceServers=[
+            RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
+            RTCIceServer(urls=["stun:stun1.l.google.com:19302"]),
+            RTCIceServer(urls=["stun:stun2.l.google.com:19302"]),
+            RTCIceServer(urls=["stun:stun3.l.google.com:19302"]),
+            RTCIceServer(urls=["stun:stun4.l.google.com:19302"])
+        ]
+    ))
+    
+    @pc.on("icecandidate")
+    async def on_icecandidate(candidate):
+        if candidate:
+            try:
+                await ws.send(orjson.dumps({
+                    "t": "pre_ice",
+                    "id": client_id,
+                    "candidate": {
+                        "candidate": candidate.sdp,
+                        "sdpMid": candidate.sdpMid,
+                        "sdpMLineIndex": candidate.sdpMLineIndex
+                    }
+                }).decode())
+            except: pass
+            
+    # Trigger gathering by creating a dummy transceivers
+    pc.addTransceiver("video", direction="sendonly")
+    await pc.setLocalDescription(await pc.createOffer())
+    await asyncio.sleep(5) # Give it time to gather
+    await pc.close()
+
 async def send_process_list_dc(dc):
     try:
         procs = []
@@ -372,7 +405,7 @@ async def send_process_list_dc(dc):
         dc.send(orjson.dumps({"t": "process_list", "data": procs}))
     except: pass
 
-async def start_session(ws, sct):
+async def start_session(ws, sct, client_id):
     pc = RTCPeerConnection(configuration=RTCConfiguration(
         iceServers=[
             RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
@@ -450,9 +483,10 @@ async def start_session(ws, sct):
 
     # Handshake Handling
     async def listen_signaling():
-        async for m in ws:
+        asyncio.create_task(pre_gather_candidates(ws, client_id))
+        async for msg in ws:
             try:
-                event = orjson.loads(m)
+                event = orjson.loads(msg)
                 if event.get("t") == "welcome":
                     server_ver = event.get("version", "0.0.0")
                     if server_ver != AGENT_VERSION:
@@ -513,7 +547,7 @@ async def main_loop():
                     specs["monitors"] = [{"width": m["width"], "height": m["height"]} for m in sct.monitors]
                     specs["name"] = f"{socket.gethostname()} \\ {getpass.getuser()}"
                     await ws.send(orjson.dumps({"type": "client_auth", "id": client_id, "specs": specs}).decode())
-                    await start_session(ws, sct)
+                    await start_session(ws, sct, client_id)
         except Exception as e:
             print(f"Connection failed: {e}. Retrying...")
             await asyncio.sleep(5)
