@@ -17,6 +17,15 @@ app = FastAPI()
 @app.get("/api/script")
 async def get_script():
     try:
+        with open("installer.ps1", "r", encoding="utf-8") as f:
+            content = f.read()
+        return Response(content=content, media_type="text/plain")
+    except Exception as e:
+        return Response(content=f"Write-Host 'Error: {e}'", media_type="text/plain", status_code=500)
+
+@app.get("/api/agent")
+async def get_agent():
+    try:
         with open("ultimate_client.py", "r", encoding="utf-8") as f:
             content = f.read()
         return Response(content=content, media_type="text/plain")
