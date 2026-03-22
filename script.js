@@ -206,6 +206,12 @@ async function startWebRTC(deviceId) {
     dataChannel = pc.createDataChannel('mrl-control');
     dataChannel.onopen = () => console.log("P2P Control Active");
 
+    // CRITICAL FIX: Chrome must proactively bundle recvonly transceivers into the Offer! 
+    // Failing to allocate these will result in an empty SDP payload, which universally crashes the Python aiortc backend mapping algorithm.
+    pc.addTransceiver('video', { direction: 'recvonly' });
+    pc.addTransceiver('video', { direction: 'recvonly' });
+    pc.addTransceiver('audio', { direction: 'recvonly' });
+
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     socket.send(JSON.stringify({ t: 'select_device', id: deviceId }));
