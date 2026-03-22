@@ -247,10 +247,17 @@ async function selectDevice(deviceId) {
     const webcamOverlay = document.getElementById('webcam-overlay');
     if (webcamOverlay) webcamOverlay.style.display = 'none';
 
+    const target = allDevices.find(d => d.hostname === deviceId);
     const roomTitle = document.getElementById('room-title');
-    if (roomTitle) roomTitle.innerText = `Host: ${deviceId}`;
+    if (roomTitle) roomTitle.innerText = `Host: ${target ? (target.specs?.name || deviceId) : deviceId}`;
     const activeHost = document.getElementById('active-host-name');
     if (activeHost) activeHost.innerText = `SESSION: ${deviceId}`;
+    
+    const cmdBtn = document.getElementById('cmd-fab-btn');
+    if (cmdBtn) {
+        cmdBtn.style.display = 'flex';
+        cmdBtn.classList.remove('open');
+    }
     
     // Link this portal to the target client on the signaling server
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -258,7 +265,6 @@ async function selectDevice(deviceId) {
     }
     
     // Instant DOM Spec & Display Prep from memory
-    const target = allDevices.find(d => d.hostname === deviceId);
     if (target && target.specs) {
         updateDetailedSpecs(target);
         if (target.specs.monitors) populateDisplaySelect(target.specs.monitors);
