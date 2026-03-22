@@ -95,6 +95,15 @@
                             <span>Webcam Link</span>
                             <input type="checkbox" id="webcam-control">
                         </div>
+                        <div class="control-item" style="margin-top:10px;">
+                            <span>Hardware</span>
+                            <select id="webcam-select" onchange="switchWebcam(this.value)" class="pro-select" style="width:120px; font-size:11px; padding:2px;">
+                                <option value="0">Cam 0 (Default)</option>
+                                <option value="1">Cam 1</option>
+                                <option value="2">Cam 2</option>
+                                <option value="3">Cam 3</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="panel-section">
@@ -153,7 +162,7 @@
             </div>
 
             <footer class="main-footer">
-                <div>MRL- Remote@T | v9.0.3-IMMORTAL</div>
+                <div>MRL- Remote@T | v9.0.6-IMMORTAL</div>
                 <div id="footer-stats">SIGNAL: STANDBY</div>
             </footer>
         </div>

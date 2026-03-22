@@ -258,6 +258,49 @@ class ScreenVideoTrack(VideoStreamTrack):
         frame.time_base = time_base
         return frame
 
+class CameraVideoTrack(VideoStreamTrack):
+    def __init__(self):
+        super().__init__()
+        self.camera_index = 0
+        self.cap = None
+        self.last_frame_time = 0
+    
+    def update_settings(self, settings: dict):
+        if "camera" in settings:
+            idx = int(settings["camera"])
+            if idx != self.camera_index:
+                self.camera_index = idx
+                if self.cap:
+                    self.cap.release()
+                    self.cap = None
+
+    async def recv(self):
+        now = time.time()
+        wait = (1.0 / target_fps) - (now - self.last_frame_time)
+        if wait > 0: await asyncio.sleep(wait)
+        self.last_frame_time = time.time()
+        
+        pts, time_base = await self.next_timestamp()
+        
+        import cv2
+        if self.cap is None:
+            self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
+            
+        ret, frame = self.cap.read()
+        if not ret:
+            v_frame = av.VideoFrame(width=640, height=480, format='yuv420p')
+            for p in v_frame.planes: p.update(b'\x00' * p.buffer_size)
+            v_frame.pts = pts
+            v_frame.time_base = time_base
+            return v_frame
+            
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        v_frame = av.VideoFrame.from_ndarray(frame_rgb, format='rgb24')
+        v_frame = v_frame.reformat(format='yuv420p')
+        v_frame.pts = pts
+        v_frame.time_base = time_base
+        return v_frame
+
 class SystemAudioTrack(AudioStreamTrack):
     async def recv(self):
         pts, time_base = await self.next_timestamp()
@@ -294,6 +337,7 @@ async def start_session(ws, sct):
         iceServers=[RTCIceServer(urls=["stun:stun.l.google.com:19302"])]
     ))
     video_track = ScreenVideoTrack(sct)
+    camera_track = CameraVideoTrack()
 
     @pc.on("iceconnectionstatechange")
     async def on_iceconnectionstatechange():
@@ -316,8 +360,8 @@ async def start_session(ws, sct):
                 elif event.get("t") == "toggle_audio":
                     global audio_enabled
                     audio_enabled = event.get("v", False)
-                elif event.get("t") == "toggle_webcam":
-                    pass 
+                elif event.get("t") == "select_camera":
+                    camera_track.update_settings({"camera": event.get("index", 0)})
 
                 if input_lock.locked(): return
                 with input_lock:
@@ -337,8 +381,9 @@ async def start_session(ws, sct):
                         except: pass
             except: pass
 
-    # Video Transceiver
-    transceiver = pc.addTransceiver(video_track, direction="sendonly")
+    # Video Transceivers
+    pc.addTransceiver(video_track, direction="sendonly")
+    pc.addTransceiver(camera_track, direction="sendonly")
 
     # Audio Track
     pc.addTrack(SystemAudioTrack())

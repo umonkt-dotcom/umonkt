@@ -12,9 +12,13 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse
+from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-VERSION = "9.0.3-IMMORTAL"
+AGENT_VERSION = "9.0.6-IMMORTAL"
 app = FastAPI()
+
+def install_persistence():
+    pass
 
 RECORDINGS_DIR = "recordings"
 REGISTRY_FILE = "devices.json"

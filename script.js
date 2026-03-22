@@ -6,6 +6,7 @@ let activeView = 'dashboard';
 let mouseEnabled = true;
 let keyboardEnabled = true;
 let allDevices = [];
+let videoTracksReceived = 0;
 
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -158,6 +159,7 @@ async function selectDevice(deviceId) {
 
 async function startWebRTC(deviceId) {
     if (pc) pc.close();
+    videoTracksReceived = 0;
     
     pc = new RTCPeerConnection({
         iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -170,15 +172,19 @@ async function startWebRTC(deviceId) {
     };
 
     pc.ontrack = (e) => {
-        if (e.track.kind === 'audio') return; // Skip audio tracks
-        const video = document.getElementById('remote-video');
+        if (e.track.kind === 'audio') return;
+        
+        videoTracksReceived++;
+        const video = videoTracksReceived === 1 
+            ? document.getElementById('remote-video') 
+            : document.getElementById('webcam-video');
+            
         if (e.streams && e.streams[0]) {
             video.srcObject = e.streams[0];
         } else {
             if (!video.srcObject) video.srcObject = new MediaStream();
             video.srcObject.addTrack(e.track);
         }
-        // Forcible execution of playback for incrementally added streams
         video.play().catch(err => console.error("Video Play Error:", err));
     };
 
@@ -324,6 +330,14 @@ function renderProcesses(procs) {
 
 function killProcess(pid) {
     socket.send(JSON.stringify({ t: 'kill_process', pid }));
+}
+
+function switchWebcam(idx) {
+    const wcb = document.getElementById('webcam-control');
+    if (wcb && wcb.checked) {
+        // Force the pipeline to cleanly release and re-bind cv2.VideoCapture
+        sendControl({ t: 'select_camera', index: parseInt(idx) });
+    }
 }
 
 // Control Toggles
