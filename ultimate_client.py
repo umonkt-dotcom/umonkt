@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.3.4-FORCE"
+AGENT_VERSION = "9.3.5-DIAG"
 target_fps = 30
 
 # --- Logging System ---

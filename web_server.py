@@ -11,7 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse, Response
-AGENT_VERSION = "9.3.4-FORCE"
+AGENT_VERSION = "9.3.5-DIAG"
 app = FastAPI()
 
 def install_persistence():
@@ -104,8 +104,13 @@ class ConnectionManager:
     async def send_to_client(self, client_id: str, data: dict):
         client_ws = CLIENTS.get(client_id)
         if client_ws:
-            try: await client_ws.send_json(data)
-            except: pass
+            try:
+                await client_ws.send_text(orjson.dumps(data).decode())
+                print(f"[REVERSE-RELAY] Success: {data.get('t')} -> {client_id}")
+            except Exception as e:
+                print(f"[REVERSE-RELAY] FAILED: {client_id} | Error: {e}")
+        else:
+            print(f"[REVERSE-RELAY] DROPPED: {client_id} not in CLIENTS list!")
 
 manager = ConnectionManager()
 
@@ -205,8 +210,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     event = orjson.loads(raw["text"])
                     # Handle registration if it's a client sending a 'reg' message after initial handshake
                     if event.get("t") == "reg":
-                        # MRL- Remote@T | v9.3.4-FORCE (Original line: client_id = str(event.get("id")))
-                        client_id = str(event.get("id")) # Retained for functionality, assuming the HTML was a comment/note.
+                        # MRL- Remote@T | v9.3.5-DIAG
                         CLIENTS[client_id] = websocket
                         DEVICE_REGISTRY[client_id] = event.get("specs")
                     elif event.get("t") == "pre_ice":

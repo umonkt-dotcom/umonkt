@@ -171,8 +171,9 @@ async function selectDevice(deviceId) {
 }
 
 async function startWebRTC(deviceId) {
-    if (pc && pc.signalingState !== 'closed') return; // SINGLE OFFER GUARD
+    if (pc) pc.close(); // AGGRESSIVE RESET - NO GUARD
     videoTracksReceived = 0;
+    iceCandidateQueue = [];
     
     pc = new RTCPeerConnection({
         iceServers: [
