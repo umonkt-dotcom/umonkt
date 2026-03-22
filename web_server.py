@@ -154,8 +154,12 @@ class ConnectionManager:
                 if watching_target != client_id:
                     continue # Drop packet
             
-            try: await portal.send_text(data)
-            except Exception: pass
+            try: 
+                await portal.send_text(data)
+                if etype == "ws_frame":
+                    print(f"[RELAY-SUCCESS] Frame for {client_id} -> Portal")
+            except Exception as e:
+                print(f"[RELAY-ERROR] Portal send failed: {e}")
 
     async def broadcast_to_portals(self, data: bytes, client_id: str = None):
         if not client_id: return
