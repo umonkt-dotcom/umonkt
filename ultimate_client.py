@@ -17,6 +17,11 @@ import shutil
 from PIL import Image, ImageDraw, ImageFont
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
+import ctypes
+import sys
+if sys.platform == "win32":
+    import pynput.keyboard._win32
+    import pynput.mouse._win32
 import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
@@ -598,7 +603,17 @@ async def start_session(ws, sct, client_id):
                         except: pass
             except: pass
 
-    # Tracks will be mapped after receiving the offer SDP
+    def ask_permission():
+        MB_YESNO = 0x04
+        MB_ICONQUESTION = 0x20
+        MB_SYSTEMMODAL = 0x1000  # Stays on top
+        IDYES = 6
+        text = "An administrator is requesting to view and control this computer.\n\nDo you want to accept this connection?"
+        title = "Incoming Remote Session"
+        try:
+            return ctypes.windll.user32.MessageBoxW(0, text, title, MB_YESNO | MB_ICONQUESTION | MB_SYSTEMMODAL) == IDYES
+        except: return True
+
     # Handshake Handling
     async def listen_signaling(ws, client_id):
         log("[SIGNAL] Listener active.")
@@ -618,6 +633,9 @@ async def start_session(ws, sct, client_id):
                         return
                     asyncio.create_task(pre_gather_candidates(ws, client_id))
                 elif etype == "rtc_offer":
+                    if not ask_permission():
+                        log("[SIGNAL] Offer rejected by user.")
+                        continue
                     if pc.iceConnectionState in ["checking", "connected", "completed"]:
                         log("[RTC] Offer ignored (Already connecting/connected)")
                         continue
@@ -675,6 +693,9 @@ async def start_session(ws, sct, client_id):
                 elif etype == "ws_request":
                     global ws_streaming_active
                     if not ws_streaming_active:
+                        if not ask_permission():
+                            log("[SIGNAL] WS Request rejected by user.")
+                            continue
                         log("[WS] Received WebSocket Relay Request!")
                         ws_streaming_active = True
                         asyncio.create_task(ws_stream_loop(ws, client_id))
