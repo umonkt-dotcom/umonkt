@@ -23,7 +23,7 @@ import numpy
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.2.2-IMMORTAL"
+AGENT_VERSION = "9.2.3-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
@@ -442,15 +442,9 @@ async def start_session(ws, sct):
                         if "a=mid:" in line:
                             fixed_sdp.append("a=fmtp:42 x-google-max-bitrate=3500;x-google-min-bitrate=500;x-google-start-bitrate=1500")
                             fixed_sdp.append("a=fmtp:98 x-google-max-bitrate=3500;x-google-min-bitrate=500;x-google-start-bitrate=1500")
-
-                    final_sdp = "\n".join(fixed_sdp)
+                    final_sdp_str = "\n".join(fixed_sdp)
                     
-                    gather_timeout = 0
-                    while pc.iceGatheringState != "complete" and gather_timeout < 25:
-                        await asyncio.sleep(0.1)
-                        gather_timeout += 1
-                        
-                    await ws.send(orjson.dumps({"t": "rtc_answer", "sdp": final_sdp, "type": pc.localDescription.type}).decode())
+                    await ws.send(orjson.dumps({"t": "rtc_answer", "sdp": final_sdp_str, "type": pc.localDescription.type}).decode())
                 elif event.get("t") == "rtc_ice":
                     try:
                         from aiortc.sdp import candidate_from_sdp
