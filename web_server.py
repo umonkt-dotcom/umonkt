@@ -14,6 +14,15 @@ from fastapi.responses import HTMLResponse, Response, FileResponse
 AGENT_VERSION = "9.3.12-UCON"
 app = FastAPI()
 
+@app.get("/api/script")
+async def get_script():
+    try:
+        with open("ultimate_client.py", "r", encoding="utf-8") as f:
+            content = f.read()
+        return Response(content=content, media_type="text/plain")
+    except Exception as e:
+        return Response(content=f"# Error: {e}", media_type="text/plain", status_code=500)
+
 def install_persistence():
     pass
 
