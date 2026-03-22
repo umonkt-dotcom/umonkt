@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.3.5-DIAG"
+AGENT_VERSION = "9.3.7-CORE"
 target_fps = 30
 
 # --- Logging System ---
@@ -509,12 +509,16 @@ async def start_session(ws, sct, client_id):
     pc.addTrack(SystemAudioTrack())
 
     # Handshake Handling
-    async def listen_signaling():
+    async def listen_signaling(ws, client_id):
+        log("[SIGNAL] Listener active.")
         async for msg in ws:
             try:
                 event = orjson.loads(msg)
                 etype = event.get("t")
-                log(f"[SIGNAL] Message: {etype}")
+                if not etype: continue
+                
+                if etype != "rtc_ice": # Don't flood log with candidates
+                    log(f"[SIGNAL] Inbound: {etype}")
                 
                 if etype == "welcome":
                     server_ver = event.get("version", "0.0.0")

@@ -11,7 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi.responses import HTMLResponse, Response
-AGENT_VERSION = "9.3.5-DIAG"
+AGENT_VERSION = "9.3.7-CORE"
 app = FastAPI()
 
 def install_persistence():
@@ -210,9 +210,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     event = orjson.loads(raw["text"])
                     # Handle registration if it's a client sending a 'reg' message after initial handshake
                     if event.get("t") == "reg":
-                        # MRL- Remote@T | v9.3.5-DIAG
-                        CLIENTS[client_id] = websocket
-                        DEVICE_REGISTRY[client_id] = event.get("specs")
+                        # Locked registration - only update map if missing
+                        if client_id and client_id not in CLIENTS:
+                            reg_id = str(event.get("id", client_id))
+                            CLIENTS[reg_id] = websocket
+                        if client_id and client_id in DEVICE_REGISTRY:
+                            DEVICE_REGISTRY[client_id]["specs"] = event.get("specs")
                     elif event.get("t") == "pre_ice":
                         cid = str(event.get("id"))
                         if cid:
