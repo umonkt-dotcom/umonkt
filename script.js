@@ -234,6 +234,14 @@ function disconnectSession() {
     document.getElementById('spec-gpu').innerText = '...';
     document.getElementById('procs-body').innerHTML = '';
     document.getElementById('display-select').innerHTML = '<option value="0">All Screens (Combined)</option>';
+    
+    // Scrub Webcam Overlay
+    const webcamImg = document.getElementById('webcam-feed');
+    if (webcamImg) {
+        webcamImg.src = '';
+        webcamImg.parentElement.style.display = 'none';
+        document.getElementById('webcam-toggle').classList.remove('active');
+    }
 }
 
 // Input Handling

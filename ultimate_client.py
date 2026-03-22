@@ -14,7 +14,7 @@ import getpass
 import platform
 import subprocess
 import shutil
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from pynput.mouse import Controller as MouseController, Button
 from pynput.keyboard import Controller as KeyboardController, Key
 import av
@@ -203,7 +203,6 @@ class ScreenVideoTrack(VideoStreamTrack):
                 mon_idx = min(1, len(self.sct.monitors)-1)
             
             if mon_idx == 0 and len(self.sct.monitors) > 2:
-                from PIL import ImageDraw, ImageFont
                 physical_monitors = self.sct.monitors[1:]
                 count = len(physical_monitors)
                 
