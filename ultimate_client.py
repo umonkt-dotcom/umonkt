@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.2.8-FIXED"
+AGENT_VERSION = "9.2.9-STABLE"
 target_fps = 30
 
 def install_persistence():
@@ -483,7 +483,6 @@ async def start_session(ws, sct, client_id):
 
     # Handshake Handling
     async def listen_signaling():
-        asyncio.create_task(pre_gather_candidates(ws, client_id))
         async for msg in ws:
             try:
                 event = orjson.loads(msg)
@@ -492,6 +491,8 @@ async def start_session(ws, sct, client_id):
                     if server_ver != AGENT_VERSION:
                         AutoUpdater.update_and_restart(server_ver)
                         return
+                    # ONLY start gathering after server is ready
+                    asyncio.create_task(pre_gather_candidates(ws, client_id))
                 elif event.get("t") == "rtc_offer":
                     raw_sdp = event["sdp"]
                     safe_sdp = "\n".join([line for line in raw_sdp.splitlines() if not line.strip().startswith("a=candidate:")])
