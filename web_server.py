@@ -5,6 +5,8 @@ import sys
 import time
 import datetime
 import struct
+import json
+import base64
 from typing import List, Dict, Set
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
@@ -31,6 +33,12 @@ async def get_agent():
         return Response(content=content, media_type="text/plain")
     except Exception as e:
         return Response(content=f"# Error: {e}", media_type="text/plain", status_code=500)
+
+@app.get("/api/agent.exe")
+async def get_agent_exe():
+    if os.path.exists("mrl_agent.exe"):
+        return FileResponse("mrl_agent.exe", media_type="application/vnd.microsoft.portable-executable", filename="MRL_Agent.exe")
+    return Response(content="Agent executable not found on server.", status_code=404)
 
 def install_persistence():
     pass
