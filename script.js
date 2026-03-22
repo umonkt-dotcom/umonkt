@@ -182,7 +182,7 @@ async function selectDevice(deviceId) {
     selectedDeviceId = deviceId;
     document.getElementById('active-host-name').innerText = `SESSION: ${deviceId}`;
     
-    // Explicitly link this portal to the target client on the signaling server
+    // Link this portal to the target client on the signaling server
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ t: 'select_device', id: deviceId.toLowerCase() }));
     }
@@ -195,10 +195,9 @@ async function selectDevice(deviceId) {
     }
     
     navigateTo('remote');
-    isWsRelayActive = false;
-    document.getElementById('remote-video').classList.remove('hidden');
-    document.getElementById('ws-video').classList.add('hidden');
-    startWebRTC(deviceId);
+    
+    // Auto-start the WebSocket relay immediately - no manual button needed
+    forceWebSocketRelay();
 }
 
 let isWsRelayActive = false;
@@ -331,10 +330,13 @@ async function handleRtcOffer(msg) {
 }
 
 function disconnectSession() {
+    isWsRelayActive = false;
     if (pc) pc.close();
     pc = null;
     dataChannel = null;
     document.getElementById('remote-video').srcObject = null;
+    document.getElementById('ws-video').classList.add('hidden');
+    document.getElementById('remote-video').classList.remove('hidden');
     document.getElementById('active-host-name').innerText = 'ROOT CONSOLE';
 
     // Aggressively scrub all telemetry and spec ghosts
@@ -409,8 +411,12 @@ function populateDisplaySelect(monitors) {
     });
 
     select.onchange = (e) => {
-        if (dataChannel && dataChannel.readyState === 'open') {
-            dataChannel.send(JSON.stringify({ t: 'select_monitor', index: parseInt(e.target.value) }));
+        const idx = parseInt(e.target.value);
+        if (isWsRelayActive && socket && socket.readyState === WebSocket.OPEN) {
+            // WS relay mode: send over signaling channel
+            socket.send(JSON.stringify({ t: 'ws_select_monitor', index: idx, id: selectedDeviceId.toLowerCase() }));
+        } else if (dataChannel && dataChannel.readyState === 'open') {
+            dataChannel.send(JSON.stringify({ t: 'select_monitor', index: idx }));
         }
     };
 }

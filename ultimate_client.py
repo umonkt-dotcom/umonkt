@@ -20,6 +20,49 @@ from pynput.keyboard import Controller as KeyboardController, Key
 import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
+import base64
+import io
+
+ws_streaming_active = False
+
+async def ws_stream_loop(ws, client_id, get_monitor_idx):
+    global ws_streaming_active
+    log("[WS] Starting Fast JPEG Fallback Stream loop...")
+    try:
+        with mss.mss() as sct:
+            while ws_streaming_active:
+                try:
+                    monitor_idx = get_monitor_idx()
+                    if monitor_idx >= len(sct.monitors) or monitor_idx < 1:
+                        monitor_idx = 1
+                    
+                    monitor = sct.monitors[monitor_idx]
+                    sct_img = sct.grab(monitor)
+                    
+                    # Convert to PIL
+                    img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                    
+                    # Resize (Fast interpolation for speed vs quality)
+                    img.thumbnail((1280, 720), Image.Resampling.BILINEAR)
+                    
+                    # Compress to fast JPEG
+                    buffer = io.BytesIO()
+                    img.save(buffer, format="JPEG", quality=40)
+                    b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                    
+                    # Send over WebSocket
+                    msg = {"t": "ws_frame", "data": b64, "id": client_id}
+                    await ws.send(orjson.dumps(msg).decode())
+                    
+                    # Pace the stream (e.g. 15 FPS)
+                    await asyncio.sleep(0.066)
+                except Exception as e:
+                    log(f"[WS_STREAM] Inner Loop Error: {e}")
+                    await asyncio.sleep(1)
+    except Exception as exc:
+        log(f"[WS_STREAM] Fatal Loop Error: {exc}")
+    finally:
+        ws_streaming_active = False
 
 AGENT_VERSION = "9.3.12-UCON"
 target_fps = 30
@@ -391,7 +434,10 @@ async def pre_gather_candidates(ws, client_id):
             RTCIceServer(urls=["stun:stun1.l.google.com:19302"]),
             RTCIceServer(urls=["stun:stun2.l.google.com:19302"]),
             RTCIceServer(urls=["stun:stun3.l.google.com:19302"]),
-            RTCIceServer(urls=["stun:stun4.l.google.com:19302"])
+            RTCIceServer(urls=["stun:stun4.l.google.com:19302"]),
+            RTCIceServer(urls=["turn:openrelay.metered.ca:80"], username="openrelayproject", credential="openrelayproject"),
+            RTCIceServer(urls=["turn:openrelay.metered.ca:443"], username="openrelayproject", credential="openrelayproject"),
+            RTCIceServer(urls=["turn:openrelay.metered.ca:443?transport=tcp"], username="openrelayproject", credential="openrelayproject")
         ]
     ))
     
@@ -411,7 +457,7 @@ async def pre_gather_candidates(ws, client_id):
             except: pass
             
     # Trigger gathering by creating a dummy transceivers
-    pc.addTransceiver("video", direction="sendonly")
+    pc.addTransceiver("video", direction="recvonly")
     await pc.setLocalDescription(await pc.createOffer())
     await asyncio.sleep(5) # Give it time to gather
     await pc.close()
@@ -439,7 +485,11 @@ async def start_session(ws, sct, client_id):
             RTCIceServer(urls=["stun:stun2.l.google.com:19302"]),
             RTCIceServer(urls=["stun:stun3.l.google.com:19302"]),
             RTCIceServer(urls=["stun:stun4.l.google.com:19302"]),
-            RTCIceServer(urls=["stun:global.stun.twilio.com:3478"])
+            RTCIceServer(urls=["stun:global.stun.twilio.com:3478"]),
+            # Free TURN relay for symmetric NAT traversal
+            RTCIceServer(urls=["turn:openrelay.metered.ca:80"], username="openrelayproject", credential="openrelayproject"),
+            RTCIceServer(urls=["turn:openrelay.metered.ca:443"], username="openrelayproject", credential="openrelayproject"),
+            RTCIceServer(urls=["turn:openrelay.metered.ca:443?transport=tcp"], username="openrelayproject", credential="openrelayproject")
         ]
     ))
     
@@ -508,13 +558,7 @@ async def start_session(ws, sct, client_id):
                         except: pass
             except: pass
 
-    # Video Transceivers
-    pc.addTransceiver(video_track, direction="sendonly")
-    pc.addTransceiver(camera_track, direction="sendonly")
-
-    # Audio Track
-    pc.addTrack(SystemAudioTrack())
-
+    # Tracks will be mapped after receiving the offer SDP
     # Handshake Handling
     async def listen_signaling(ws, client_id):
         log("[SIGNAL] Listener active.")
@@ -541,9 +585,22 @@ async def start_session(ws, sct, client_id):
                     log(f"[RTC] Offer received (SDP Length: {len(event['sdp'])})")
                     # NO STUN STRIPPING - Let aiortc handle the candidates
                     await pc.setRemoteDescription(RTCSessionDescription(sdp=event["sdp"], type=event["type"]))
+                    
+                    # Associate tracks with the transceivers created by the incoming offer
+                    pc.addTrack(video_track)         # Maps to first video m-line
+                    pc.addTrack(camera_track)        # Maps to second video m-line
+                    pc.addTrack(SystemAudioTrack()) # Maps to first audio m-line
+
                     ans = await pc.createAnswer()
                     await pc.setLocalDescription(ans)
                     
+                    # BLOCK until aiortc finishes gathering candidates (typically 1-5s)
+                    # aiortc 1.14.0 embeds candidates DIRECTLY into the localDescription SDP
+                    while pc.iceGatheringState != 'complete':
+                        await asyncio.sleep(0.1)
+                        
+                    log(f"[RTC] Gathering complete. Serializing fully populated SDP...")
+
                     # ANYDESK SDP HACK: Inject High Bitrate Negotiation Commands
                     sdp_lines = pc.localDescription.sdp.split("\n")
                     fixed_sdp = []
@@ -575,6 +632,17 @@ async def start_session(ws, sct, client_id):
                 elif etype == "rtc_control":
                     # Handle any server-side controls
                     log(f"[CTRL] Command: {event.get('cmd')}")
+                elif etype == "ws_request":
+                    global ws_streaming_active
+                    if not ws_streaming_active:
+                        log("[WS] Received WebSocket Relay Request!")
+                        ws_streaming_active = True
+                        asyncio.create_task(ws_stream_loop(ws, client_id, lambda: getattr(video_track, 'monitor_idx', 1)))
+                elif etype == "ws_select_monitor":
+                    idx = int(event.get("index", 1))
+                    if hasattr(video_track, 'update_settings'):
+                        video_track.update_settings({"monitor": idx})
+                    log(f"[WS] Monitor switched to index {idx}")
             except Exception as e:
                 log(f"[SIGNAL] Error: {e}")
 
