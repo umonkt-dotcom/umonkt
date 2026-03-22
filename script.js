@@ -170,8 +170,12 @@ async function selectDevice(deviceId) {
     startWebRTC(deviceId);
 }
 
+let isConnecting = false;
 async function startWebRTC(deviceId) {
-    if (pc) pc.close(); // AGGRESSIVE RESET - NO GUARD
+    if (isConnecting) return;
+    isConnecting = true;
+
+    if (pc) pc.close(); 
     videoTracksReceived = 0;
     iceCandidateQueue = [];
     
@@ -184,7 +188,6 @@ async function startWebRTC(deviceId) {
             { urls: 'stun:stun4.l.google.com:19302' }
         ]
     });
-    iceCandidateQueue = []; 
 
     pc.onicecandidate = (e) => {
         if (e.candidate) {
@@ -207,10 +210,16 @@ async function startWebRTC(deviceId) {
             video.srcObject.addTrack(e.track);
         }
         video.play().catch(err => console.error("Video Play Error:", err));
+        isConnecting = false; // Connection successful
     };
 
     pc.oniceconnectionstatechange = () => {
+        console.log("ICE:", pc.iceConnectionState);
+        if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+            isConnecting = false;
+        }
         if (pc && (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed')) {
+            isConnecting = false;
             console.log("Device Connection Lost.");
             disconnectSession();
             navigateTo('dashboard');

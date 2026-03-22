@@ -1,14 +1,6 @@
 fastapi
 uvicorn
-mss
-Pillow
-psutil
-sounddevice
 websockets
-pynput
-cffi
-aiortc
-av
-pyperclip
 orjson
-uvloop
+python-multipart
+# Agent-only deps removed to optimize backend build

