@@ -38,7 +38,10 @@ async def get_agent():
 async def get_agent_exe():
     if os.path.exists("mrl_agent.exe"):
         return FileResponse("mrl_agent.exe", media_type="application/vnd.microsoft.portable-executable", filename="MRL_Agent.exe")
-    return Response(content="Agent executable not found on server.", status_code=404)
+    cwd = os.getcwd()
+    ls = os.listdir(".")
+    chunks_ls = os.listdir("agent_chunks") if os.path.exists("agent_chunks") else "no chunk dir"
+    return Response(content=f"Agent not found. CWD={cwd}, LS={ls}, CHUNKS={chunks_ls}", status_code=404)
 
 def install_persistence():
     pass
