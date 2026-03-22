@@ -70,12 +70,18 @@ async def ws_stream_loop(ws, client_id):
                         monitor = sct.monitors[safe_idx]
                         sct_img = sct.grab(monitor)
                         img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-                        img.thumbnail((1280, 720), Image.Resampling.BILINEAR)
 
-                    # Compress screen frame
+                        # Dynamic resize: preserve aspect ratio with max 1280px width
+                        w, h = img.size
+                        if w > 1280:
+                            ratio = 1280 / w
+                            img = img.resize((1280, int(h * ratio)), Image.Resampling.BILINEAR)
+
+                    # Compress using dynamic quality (ws_jpeg_quality is set by set_quality handler)
                     buffer = io.BytesIO()
-                    img.save(buffer, format="JPEG", quality=40)
-                    b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                    img.save(buffer, format="JPEG", quality=ws_jpeg_quality, subsampling=2, optimize=False)
+                    frame_bytes = buffer.getvalue()
+                    b64 = base64.b64encode(frame_bytes).decode('utf-8')
                     await ws.send(orjson.dumps({"t": "ws_frame", "data": b64, "id": client_id}).decode())
 
                     # --- Webcam overlay ---

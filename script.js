@@ -14,7 +14,19 @@ document.addEventListener('DOMContentLoaded', () => {
     connect();
     setupDraggable('webcam-overlay');
     setupSliders();
+    startClock();
 });
+
+function startClock() {
+    const el = document.getElementById('clock');
+    if (!el) return;
+    const tick = () => {
+        const now = new Date();
+        el.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+    };
+    tick();
+    setInterval(tick, 1000);
+}
 
 let heartbeatInterval = null;
 
@@ -151,31 +163,39 @@ async function fetchDevices() {
 
 function renderDeviceGrid(devices) {
     const grid = document.getElementById('device-grid');
-    grid.innerHTML = devices.map(d => {
+    const active = devices.filter(d => d.status === 'Active');
+    if (!active.length) {
+        grid.innerHTML = `<div class="empty-state"><i class="fas fa-satellite-dish"></i><p>No nodes connected</p><span>Run the PowerShell command on a target system</span></div>`;
+        return;
+    }
+    grid.innerHTML = active.map(d => {
         const specs = d.specs || {};
-        const online = d.status === 'Active';
         return `
-            <div class="device-card" onclick="${online ? `selectDevice('${d.hostname}')` : ''}" style="opacity: ${online ? 1 : 0.5}">
-                <div style="display:flex; justify-content:space-between; align-items:center">
-                    <div style="font-weight:700; color:white">${specs.name || 'Agent'}</div>
-                    <div class="dot ${online ? 'green' : 'gray'}"></div>
+            <div class="device-card" onclick="selectDevice('${d.hostname}')">
+                <div class="card-header">
+                    <div>
+                        <div class="card-name">${specs.name || 'Remote Node'}</div>
+                        <div class="card-id">${d.hostname}</div>
+                    </div>
+                    <div class="card-status-dot"></div>
                 </div>
-                <div style="font-size:11px; color:var(--text-muted); margin-bottom:10px;">${d.hostname}</div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap">
-                    <div class="spec-mini"><i class="fas fa-microchip"></i> ${specs.cpu || '--'}</div>
-                    <div class="spec-mini"><i class="fas fa-memory"></i> ${specs.ram || '--'}</div>
-                    <div class="spec-mini"><i class="fas fa-desktop"></i> ${specs.monitors ? specs.monitors.length - 1 : 1} Screens</div>
+                <div class="card-specs">
+                    <div class="spec-badge"><i class="fas fa-microchip"></i> ${specs.cpu ? specs.cpu.split(' ').slice(-2).join(' ') : '--'}</div>
+                    <div class="spec-badge"><i class="fas fa-memory"></i> ${specs.ram || '--'}</div>
+                    <div class="spec-badge"><i class="fas fa-desktop"></i> ${specs.monitors ? specs.monitors.length - 1 : 1} Screen${(specs.monitors?.length - 1) !== 1 ? 's' : ''}</div>
                 </div>
-            </div>
-        `;
+            </div>`;
     }).join('');
 }
 
 function renderActiveSidebar(devices) {
     const container = document.getElementById('dynamic-remote-links');
-    container.innerHTML = devices.filter(d => d.status === 'Active').map(d => `
+    const label = document.getElementById('nodes-label');
+    const active = devices.filter(d => d.status === 'Active');
+    if (label) label.style.display = active.length ? '' : 'none';
+    container.innerHTML = active.map(d => `
         <div class="nav-item ${selectedDeviceId === d.hostname ? 'active' : ''}" onclick="selectDevice('${d.hostname}')">
-            <i class="fas fa-desktop" style="color:var(--pro-green)"></i> ${d.specs?.name || d.hostname}
+            <i class="fas fa-desktop"></i><span>${d.specs?.name || d.hostname}</span>
         </div>
     `).join('');
 }
@@ -587,7 +607,7 @@ function runRemotePs(cmd) {
     if (out) {
         const line = document.createElement('div');
         line.className = 'term-line';
-        line.style.color = '#0099ff';
+        line.style.color = 'var(--accent-primary)';
         line.innerText = `> ${cmd}`;
         out.appendChild(line);
         out.scrollTop = out.scrollHeight;
@@ -595,10 +615,77 @@ function runRemotePs(cmd) {
     const input = document.getElementById('ps-input');
     if (input) input.value = '';
     
-    // Send as rtc_control or ws_control depending on mode
     if (isWsRelayActive && socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ t: 'ws_ps_execute', cmd: cmd, id: selectedDeviceId ? selectedDeviceId.toLowerCase() : '' }));
     } else {
         sendControl({ t: 'ps_execute', cmd: cmd });
     }
+}
+
+// ============================================================
+// Commands Panel
+// ============================================================
+let commandPanelOpen = false;
+
+function toggleCommandPanel() {
+    const panel = document.getElementById('commands-panel');
+    const btn = document.getElementById('cmd-fab-btn');
+    commandPanelOpen = !commandPanelOpen;
+    if (commandPanelOpen) {
+        panel.classList.remove('hidden');
+        // Force reflow for transition
+        panel.getBoundingClientRect();
+        panel.classList.add('visible');
+        btn.classList.add('open');
+    } else {
+        panel.classList.remove('visible');
+        btn.classList.remove('open');
+        setTimeout(() => { if (!commandPanelOpen) panel.classList.add('hidden'); }, 300);
+    }
+}
+
+function quickCmd(cmd) {
+    if (!selectedDeviceId) {
+        alert('Please select a remote node first!');
+        return;
+    }
+    // Open the shell output (navigate to remote view if not there)
+    if (activeView !== 'remote') {
+        navigateTo('remote');
+    }
+    // Send command and show output in terminal
+    const out = document.getElementById('ps-output');
+    if (out) {
+        const line = document.createElement('div');
+        line.className = 'term-line';
+        line.style.color = 'var(--accent-primary)';
+        line.innerText = `> ${cmd.length > 60 ? cmd.substring(0, 60) + '...' : cmd}`;
+        out.appendChild(line);
+        out.scrollTop = out.scrollHeight;
+    }
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ t: 'ws_ps_execute', cmd: cmd, id: selectedDeviceId.toLowerCase() }));
+    }
+}
+
+function runCommandFromPanel() {
+    const input = document.getElementById('cmd-panel-input');
+    if (!input || !input.value.trim()) return;
+    quickCmd(input.value.trim());
+    input.value = '';
+}
+
+function copyInstallCmd(btn) {
+    const cmd = document.getElementById('install-cmd');
+    if (!cmd) return;
+    navigator.clipboard.writeText(cmd.innerText).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    });
+}
+
+function requestProcessList() {
+    if (!selectedDeviceId) return;
+    sendControl({ t: 'get_processes' });
 }

