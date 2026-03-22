@@ -132,13 +132,19 @@ function renderActiveSidebar(devices) {
 
 function updateDetailedSpecs(device) {
     if (!device) return;
-    const s = device.specs || {};
-    document.getElementById('spec-user').innerText = s.user || '--';
-    document.getElementById('spec-os').innerText = s.os || '--';
-    document.getElementById('spec-cpu').innerText = s.cpu || '--';
-    document.getElementById('spec-ram').innerText = s.ram || '--';
-    document.getElementById('spec-disk').innerText = s.disk || '--';
-    document.getElementById('spec-gpu').innerText = s.gpu || '--';
+    document.getElementById('spec-user').innerText = device.specs.user || '--';
+    document.getElementById('spec-os').innerText = device.specs.os || '--';
+    document.getElementById('spec-cpu').innerText = device.specs.cpu || '--';
+    document.getElementById('spec-ram').innerText = device.specs.ram || '--';
+    document.getElementById('spec-disk').innerText = device.specs.disk || '--';
+    document.getElementById('spec-gpu').innerText = device.specs.gpu || '--';
+
+    const sel = document.getElementById('webcam-select');
+    if (device.specs.cameras && device.specs.cameras.length > 0) {
+        sel.innerHTML = device.specs.cameras.map((c, i) => `<option value="${i}">${c}</option>`).join('');
+    } else {
+        sel.innerHTML = `<option value="0">Cam 0 (Default)</option><option value="1">Cam 1</option><option value="2">Cam 2</option>`;
+    }
 }
 
 // Session Logic
